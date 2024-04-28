@@ -14,14 +14,27 @@ build_opts = [
 ]
 add_project_arguments(build_opts, language: 'c')
 
+staticdeps = get_option('staticdeps')
 
+# Always dynamically link on macOS
+if host_machine.system() == 'darwin'
+  staticdeps = false
+endif
+
+dep_sdl2 = dependency('SDL2', static: staticdeps)
 dep_backtrace = c_compiler.find_library('backtrace', static: true, required: false)
 
 sources = [
-  'src/memory.c',
+  'src/filesystem.c',
   'src/log.c',
+  'src/memory.c',
+  'src/strings.c',
 ]
-dependencies = [dep_backtrace]
+
+dependencies = [
+  dep_sdl2,
+  dep_backtrace,
+]
 
 if dep_backtrace.found() and host_machine.system() == 'linux'
   sources += ['src/log_linux.c']
