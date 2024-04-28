@@ -23,8 +23,8 @@ static char *Log_GetMiniDumpPath(const char *const log_path)
     }
 
     const size_t index = dot - log_path;
-    const char *new_extension = "dmp";
-    const size_t new_len = strlen(log_path) - index + strlen(new_extension) + 1;
+    const char *new_extension = ".dmp";
+    const size_t new_len = index + strlen(new_extension) + 1;
     char *minidump_path = Memory_Alloc(new_len);
     strncpy(minidump_path, log_path, index);
     strcat(minidump_path, new_extension);
