@@ -1,0 +1,15 @@
+repos:
+- repo: local
+  hooks:
+  - id: clang-format
+    name: clang-format
+    entry: clang-format
+    args: ["-style=file", "-i"]
+    language: system
+    files: \.[ch](pp)?$
+
+  - id: additional-lint
+    name: Run additional linters
+    entry: tools/additional_lint
+    language: python
+    stages: [commit]
