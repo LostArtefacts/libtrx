@@ -11,6 +11,8 @@ c_compiler = meson.get_compiler('c')
 build_opts = [
   '-Wno-unused',
   '-DMESON_BUILD',
+  '-DPCRE2_STATIC',
+  '-DPCRE2_CODE_UNIT_WIDTH=8',
 ]
 add_project_arguments(build_opts, language: 'c')
 
@@ -22,6 +24,7 @@ if host_machine.system() == 'darwin'
 endif
 
 dep_sdl2 = dependency('SDL2', static: staticdeps)
+dep_pcre2 = dependency('libpcre2-8', static: staticdeps)
 dep_backtrace = c_compiler.find_library('backtrace', static: true, required: false)
 
 sources = [
@@ -38,6 +41,7 @@ sources = [
 
 dependencies = [
   dep_sdl2,
+  dep_pcre2,
   dep_backtrace,
 ]
 
