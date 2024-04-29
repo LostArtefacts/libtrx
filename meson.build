@@ -55,5 +55,15 @@ libtrx = static_library(
   'libtrx',
   sources,
   dependencies: dependencies,
-  include_directories: ['src/'],
+  include_directories: [
+    'include/libtrx/',
+    'src/',
+  ]
+)
+
+dep_trx = declare_dependency(
+  link_whole: libtrx,
+  include_directories: [
+    include_directories('include', is_system: true)
+  ]
 )

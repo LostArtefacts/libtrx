@@ -1,6 +1,5 @@
-#include "json/json_write.h"
+#include "json.h"
 
-#include "json/json_base.h"
 #include "memory.h"
 
 static int json_write_minified_get_value_size(
