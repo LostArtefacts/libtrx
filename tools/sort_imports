@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+from libtrx.cli.sort_imports import run_script
+from libtrx.paths import LIBTRX_INCLUDE_DIR, LIBTRX_SRC_DIR
+
+run_script(
+    root_dir=LIBTRX_SRC_DIR,
+    include_dirs=[
+        LIBTRX_INCLUDE_DIR,
+        LIBTRX_SRC_DIR,
+    ],
+    system_include_dirs=[],
+    own_include_map={
+        "json/bson_write.c": "bson.h",
+        "json/bson_parse.c": "bson.h",
+        "json/json_base.c": "json.h",
+        "json/json_write.c": "json.h",
+        "json/json_parse.c": "json.h",
+        "log_unknown.c": "log.h",
+        "log_linux.c": "log.h",
+        "log_windows.c": "log.h",
+    },
+    fix_map={},
+    forced_order=[
+        "<windows.h>",
+        "<dbghelp.h>",
+        "<tlhelp32.h>",
+    ],
+)
