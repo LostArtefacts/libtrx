@@ -26,6 +26,11 @@ dep_backtrace = c_compiler.find_library('backtrace', static: true, required: fal
 
 sources = [
   'src/filesystem.c',
+  'src/json/bson_parse.c',
+  'src/json/bson_write.c',
+  'src/json/json_base.c',
+  'src/json/json_parse.c',
+  'src/json/json_write.c',
   'src/log.c',
   'src/memory.c',
   'src/strings.c',
