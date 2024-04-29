@@ -1,8 +1,6 @@
 #pragma once
 
-#include "json_base.h"
-
-#include <stddef.h>
+#include "json.h"
 
 enum bson_parse_error_e {
     bson_parse_error_none = 0,
@@ -25,3 +23,7 @@ struct json_value_s *bson_parse_ex(
     const char *src, size_t src_size, struct bson_parse_result_s *result);
 
 const char *bson_get_error_description(enum bson_parse_error_e error);
+
+/* Write out a BSON binary string. Return 0 if an error occurred (malformed
+ * JSON input, or malloc failed). The out_size parameter is optional. */
+void *bson_write(const struct json_value_s *value, size_t *out_size);
