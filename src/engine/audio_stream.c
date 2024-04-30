@@ -36,6 +36,9 @@ typedef struct AUDIO_STREAM_SOUND {
     double duration;
     double timestamp;
 
+    double start_at;
+    double stop_at;
+
     void (*finish_callback)(int32_t sound_id, void *user_data);
     void *finish_callback_user_data;
 
@@ -58,27 +61,55 @@ extern SDL_AudioDeviceID g_AudioDeviceID;
 static AUDIO_STREAM_SOUND m_Stream_s[AUDIO_MAX_ACTIVE_STREAMS] = { 0 };
 static float m_DecodeBuffer[AUDIO_SAMPLES * AUDIO_WORKING_CHANNELS] = { 0 };
 
+static void Audio_Stream_SeekToStart(AUDIO_STREAM_SOUND *stream);
 static bool Audio_Stream_DecodeFrame(AUDIO_STREAM_SOUND *stream);
 static bool Audio_Stream_EnqueueFrame(AUDIO_STREAM_SOUND *stream);
 static bool Audio_Stream_InitialiseFromPath(
     int32_t sound_id, const char *file_path);
 static void Audio_Stream_Clear(AUDIO_STREAM_SOUND *stream);
 
+static void Audio_Stream_SeekToStart(AUDIO_STREAM_SOUND *stream)
+{
+    assert(stream != NULL);
+
+    stream->timestamp = stream->start_at;
+    if (stream->start_at <= 0.0) {
+        // reset to start of file
+        avio_seek(stream->av.format_ctx->pb, 0, SEEK_SET);
+        avformat_seek_file(
+            stream->av.format_ctx, -1, 0, 0, 0, AVSEEK_FLAG_FRAME);
+    } else {
+        // seek to specific timestamp
+        const double time_base_sec = av_q2d(stream->av.stream->time_base);
+        av_seek_frame(
+            stream->av.format_ctx, 0, stream->start_at / time_base_sec,
+            AVSEEK_FLAG_ANY);
+    }
+}
+
 static bool Audio_Stream_DecodeFrame(AUDIO_STREAM_SOUND *stream)
 {
     assert(stream != NULL);
+
+    if (stream->stop_at > 0.0 && stream->timestamp >= stream->stop_at) {
+        if (stream->is_looped) {
+            Audio_Stream_SeekToStart(stream);
+            return Audio_Stream_DecodeFrame(stream);
+        } else {
+            return false;
+        }
+    }
 
     int32_t error_code =
         av_read_frame(stream->av.format_ctx, stream->av.packet);
 
     if (error_code == AVERROR_EOF && stream->is_looped) {
-        avio_seek(stream->av.format_ctx->pb, 0, SEEK_SET);
-        avformat_seek_file(
-            stream->av.format_ctx, -1, 0, 0, 0, AVSEEK_FLAG_FRAME);
+        Audio_Stream_SeekToStart(stream);
         return Audio_Stream_DecodeFrame(stream);
     }
 
     if (error_code < 0) {
+        LOG_ERROR("error while decoding audio stream: %d", error_code);
         return false;
     }
 
@@ -255,6 +286,8 @@ static bool Audio_Stream_InitialiseFromPath(
     stream->finish_callback_user_data = NULL;
     stream->duration =
         (double)stream->av.format_ctx->duration / (double)AV_TIME_BASE;
+    stream->start_at = -1.0; // negative value means unset
+    stream->stop_at = -1.0; // negative value means unset
 
     stream->sdl.stream = SDL_NewAudioStream(
         sdl_format, sdl_channels, sdl_sample_rate, AUDIO_WORKING_FORMAT,
@@ -599,4 +632,26 @@ bool Audio_Stream_SeekTimestamp(int32_t sound_id, double timestamp)
     }
 
     return false;
+}
+
+bool Audio_Stream_SetStartTimestamp(int32_t sound_id, double timestamp)
+{
+    if (!g_AudioDeviceID || sound_id < 0
+        || sound_id >= AUDIO_MAX_ACTIVE_STREAMS) {
+        return false;
+    }
+
+    m_Stream_s[sound_id].start_at = timestamp;
+    return true;
+}
+
+bool Audio_Stream_SetStopTimestamp(int32_t sound_id, double timestamp)
+{
+    if (!g_AudioDeviceID || sound_id < 0
+        || sound_id >= AUDIO_MAX_ACTIVE_STREAMS) {
+        return false;
+    }
+
+    m_Stream_s[sound_id].stop_at = timestamp;
+    return true;
 }
