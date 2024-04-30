@@ -12,8 +12,9 @@
 
 extern SDL_AudioDeviceID g_AudioDeviceID;
 
-int32_t Audio_GetAVAudioFormat(const int32_t sample_fmt);
-int32_t Audio_GetSDLAudioFormat(const enum AVSampleFormat sample_fmt);
+int32_t Audio_GetAVChannelLayout(int32_t sample_fmt);
+int32_t Audio_GetAVAudioFormat(int32_t sample_fmt);
+int32_t Audio_GetSDLAudioFormat(enum AVSampleFormat sample_fmt);
 
 void Audio_Sample_Init(void);
 void Audio_Sample_Shutdown(void);

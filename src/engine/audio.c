@@ -91,17 +91,28 @@ bool Audio_Shutdown(void)
     return true;
 }
 
+int32_t Audio_GetAVChannelLayout(const int32_t channels)
+{
+    switch (channels) {
+        // clang-format off
+        case 1: return AV_CH_LAYOUT_MONO;
+        case 2: return AV_CH_LAYOUT_STEREO;
+        default: return AV_CH_LAYOUT_MONO;
+        // clang-format on
+    }
+}
+
 int32_t Audio_GetAVAudioFormat(const int32_t sample_fmt)
 {
-    // clang-format off
     switch (sample_fmt) {
+        // clang-format off
         case AUDIO_U8: return AV_SAMPLE_FMT_U8;
         case AUDIO_S16: return AV_SAMPLE_FMT_S16;
         case AUDIO_S32: return AV_SAMPLE_FMT_S32;
         case AUDIO_F32: return AV_SAMPLE_FMT_FLT;
         default: return -1;
+        // clang-format on
     }
-    // clang-format on
 }
 
 int32_t Audio_GetSDLAudioFormat(const enum AVSampleFormat sample_fmt)
