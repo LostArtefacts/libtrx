@@ -1,0 +1,47 @@
+name: Run code linters
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  lint:
+    name: Run code linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+          echo 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main' | sudo tee -a /etc/apt/sources.list
+          echo 'deb-src http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main' | sudo tee -a /etc/apt/sources.list
+          sudo apt update
+          sudo apt-get install -y clang-format-18 iwyu
+          sudo snap install --edge --classic just
+          sudo ln -s /usr/bin/clang-format-18 /usr/local/bin/clang-format
+          sudo apt-get install -y python3-pip
+          sudo python3 -m pip install pyjson5 pre-commit
+
+      - name: Check formatted code differences
+        run: |
+          just lint-format || /bin/true
+          git diff --exit-code || (
+            clang-format --version
+            echo 'Please run `just lint` and commit the changes.'
+            exit 1
+          )
+
+      - name: Check imports
+        run: |
+          git add -A
+          just lint-imports
+          git diff --exit-code || (
+            include-what-you-use --version
+            echo 'Please run `just lint` and commit the changes.'
+            exit 1
+          )
