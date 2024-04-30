@@ -18,6 +18,9 @@ run_script(
         "log_unknown.c": "log.h",
         "log_linux.c": "log.h",
         "log_windows.c": "log.h",
+        "engine/audio.c": "audio.h",
+        "engine/audio_sample.c": "audio.h",
+        "engine/audio_stream.c": "audio.h",
     },
     fix_map={},
     forced_order=[
