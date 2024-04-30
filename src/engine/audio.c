@@ -11,19 +11,19 @@
 
 SDL_AudioDeviceID g_AudioDeviceID = 0;
 static int32_t m_RefCount = 0;
-static size_t m_WorkingBufferSize = 0;
-static float *m_WorkingBuffer = NULL;
-static Uint8 m_WorkingSilence = 0;
+static size_t m_MixBufferCapacity = 0;
+static float *m_MixBuffer = NULL;
+static Uint8 m_Silence = 0;
 
 static void Audio_MixerCallback(
     void *userdata, Uint8 *stream_data, int32_t len);
 
 static void Audio_MixerCallback(void *userdata, Uint8 *stream_data, int32_t len)
 {
-    memset(m_WorkingBuffer, m_WorkingSilence, len);
-    Audio_Stream_Mix(m_WorkingBuffer, len);
-    Audio_Sample_Mix(m_WorkingBuffer, len);
-    memcpy(stream_data, m_WorkingBuffer, len);
+    memset(m_MixBuffer, m_Silence, len);
+    Audio_Stream_Mix(m_MixBuffer, len);
+    Audio_Sample_Mix(m_MixBuffer, len);
+    memcpy(stream_data, m_MixBuffer, len);
 }
 
 bool Audio_Init(void)
@@ -60,11 +60,11 @@ bool Audio_Init(void)
         return false;
     }
 
-    m_WorkingSilence = desired.silence;
-    m_WorkingBufferSize = desired.samples * desired.channels
+    m_Silence = desired.silence;
+    m_MixBufferCapacity = desired.samples * desired.channels
         * SDL_AUDIO_BITSIZE(desired.format) / 8;
 
-    m_WorkingBuffer = Memory_Alloc(m_WorkingBufferSize);
+    m_MixBuffer = Memory_Alloc(m_MixBufferCapacity);
 
     SDL_PauseAudioDevice(g_AudioDeviceID, 0);
 
@@ -87,7 +87,7 @@ bool Audio_Shutdown(void)
         g_AudioDeviceID = 0;
     }
 
-    Memory_FreePointer(&m_WorkingBuffer);
+    Memory_FreePointer(&m_MixBuffer);
     return true;
 }
 
