@@ -19,6 +19,7 @@
 #include <libavutil/mem.h>
 #include <libavutil/rational.h>
 #include <libavutil/samplefmt.h>
+#include <libswresample/swresample.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -52,6 +53,16 @@ typedef struct AUDIO_STREAM_SOUND {
     } av;
 
     struct {
+        int32_t src_format;
+        int32_t src_channels;
+        int32_t src_sample_rate;
+        int32_t dst_format;
+        int32_t dst_channels;
+        int32_t dst_sample_rate;
+        SwrContext *ctx;
+    } swr;
+
+    struct {
         SDL_AudioStream *stream;
     } sdl;
 } AUDIO_STREAM_SOUND;
@@ -59,7 +70,10 @@ typedef struct AUDIO_STREAM_SOUND {
 extern SDL_AudioDeviceID g_AudioDeviceID;
 
 static AUDIO_STREAM_SOUND m_Streams[AUDIO_MAX_ACTIVE_STREAMS] = { 0 };
-static float m_DecodeBuffer[AUDIO_SAMPLES * AUDIO_WORKING_CHANNELS] = { 0 };
+static float m_MixBuffer[AUDIO_SAMPLES * AUDIO_WORKING_CHANNELS] = { 0 };
+
+static size_t m_DecodeBufferCapacity = 0;
+static float *m_DecodeBuffer = NULL;
 
 static void Audio_Stream_SeekToStart(AUDIO_STREAM_SOUND *stream);
 static bool Audio_Stream_DecodeFrame(AUDIO_STREAM_SOUND *stream);
@@ -132,44 +146,81 @@ static bool Audio_Stream_EnqueueFrame(AUDIO_STREAM_SOUND *stream)
 {
     assert(stream != NULL);
 
+    int32_t error_code;
+
+    if (!stream->swr.ctx) {
+        stream->swr.src_sample_rate = stream->av.codec_ctx->sample_rate;
+        stream->swr.src_channels = stream->av.codec_ctx->channels;
+        stream->swr.src_format = stream->av.codec_ctx->sample_fmt;
+        stream->swr.dst_sample_rate = AUDIO_WORKING_RATE;
+        stream->swr.dst_channels = AUDIO_WORKING_CHANNELS;
+        stream->swr.dst_format = Audio_GetAVAudioFormat(AUDIO_WORKING_FORMAT);
+        stream->swr.ctx = swr_alloc_set_opts(
+            stream->swr.ctx, Audio_GetAVChannelLayout(stream->swr.dst_channels),
+            stream->swr.dst_format, stream->swr.dst_sample_rate,
+            Audio_GetAVChannelLayout(stream->swr.src_channels),
+            stream->swr.src_format, stream->swr.src_sample_rate, 0, 0);
+        if (!stream->swr.ctx) {
+            av_packet_unref(stream->av.packet);
+            error_code = AVERROR(ENOMEM);
+            goto cleanup;
+        }
+
+        error_code = swr_init(stream->swr.ctx);
+        if (error_code != 0) {
+            av_packet_unref(stream->av.packet);
+            goto cleanup;
+        }
+    }
+
     while (1) {
-        int32_t error_code =
+        error_code =
             avcodec_receive_frame(stream->av.codec_ctx, stream->av.frame);
         if (error_code == AVERROR(EAGAIN)) {
             av_frame_unref(stream->av.frame);
+            error_code = 0;
             break;
         }
 
         if (error_code < 0) {
-            av_packet_unref(stream->av.packet);
-            av_frame_unref(stream->av.frame);
-            LOG_ERROR(
-                "Got an error when decoding frame: %d, %s", error_code,
-                av_err2str(error_code));
-            break;
-        }
-
-        error_code = av_samples_get_buffer_size(
-            NULL, stream->av.codec_ctx->channels, stream->av.frame->nb_samples,
-            stream->av.codec_ctx->sample_fmt, 1);
-
-        if (error_code == AVERROR(EAGAIN)) {
             av_frame_unref(stream->av.frame);
             break;
         }
 
-        if (error_code < 0) {
-            LOG_ERROR(
-                "Got an error when decoding frame: %d, %s", error_code,
-                av_err2str(error_code));
-            av_frame_unref(stream->av.frame);
-            break;
+        uint8_t *out_buffer = NULL;
+        const int32_t out_samples =
+            swr_get_out_samples(stream->swr.ctx, stream->av.frame->nb_samples);
+        av_samples_alloc(
+            &out_buffer, NULL, stream->swr.dst_channels, out_samples,
+            stream->swr.dst_format, 1);
+        int32_t resampled_size = swr_convert(
+            stream->swr.ctx, &out_buffer, out_samples,
+            (const uint8_t **)stream->av.frame->data,
+            stream->av.frame->nb_samples);
+
+        size_t out_pos = 0;
+        while (resampled_size > 0) {
+            const size_t out_buffer_size = av_samples_get_buffer_size(
+                NULL, stream->swr.dst_channels, resampled_size,
+                stream->swr.dst_format, 1);
+
+            if (out_buffer_size > m_DecodeBufferCapacity) {
+                m_DecodeBufferCapacity += out_buffer_size;
+                m_DecodeBuffer =
+                    Memory_Realloc(m_DecodeBuffer, m_DecodeBufferCapacity);
+            }
+            if (out_buffer) {
+                memcpy(
+                    (uint8_t *)m_DecodeBuffer + out_pos, out_buffer,
+                    out_buffer_size);
+            }
+            out_pos += out_buffer_size;
+
+            resampled_size =
+                swr_convert(stream->swr.ctx, &out_buffer, out_samples, NULL, 0);
         }
 
-        int32_t data_size = error_code;
-
-        if (SDL_AudioStreamPut(
-                stream->sdl.stream, stream->av.frame->data[0], data_size)) {
+        if (SDL_AudioStreamPut(stream->sdl.stream, m_DecodeBuffer, out_pos)) {
             LOG_ERROR("Got an error when decoding frame: %s", SDL_GetError());
             av_frame_unref(stream->av.frame);
             break;
@@ -178,10 +229,19 @@ static bool Audio_Stream_EnqueueFrame(AUDIO_STREAM_SOUND *stream)
         double time_base_sec = av_q2d(stream->av.stream->time_base);
         stream->timestamp =
             stream->av.frame->best_effort_timestamp * time_base_sec;
+        av_freep(&out_buffer);
         av_frame_unref(stream->av.frame);
     }
 
     av_packet_unref(stream->av.packet);
+
+cleanup:
+    if (error_code > 0) {
+        LOG_ERROR(
+            "Got an error when decoding frame: %d, %s", error_code,
+            av_err2str(error_code));
+    }
+
     return true;
 }
 
@@ -265,14 +325,6 @@ static bool Audio_Stream_InitialiseFromPath(
 
     Audio_Stream_DecodeFrame(stream);
 
-    int32_t sdl_format =
-        Audio_GetSDLAudioFormat(stream->av.codec_ctx->sample_fmt);
-    if (sdl_format < 0) {
-        LOG_ERROR(
-            "Unknown sample format: %d", stream->av.codec_ctx->sample_fmt);
-        goto cleanup;
-    }
-
     int32_t sdl_sample_rate = stream->av.codec_ctx->sample_rate;
     int32_t sdl_channels = stream->av.codec_ctx->channels;
 
@@ -290,8 +342,8 @@ static bool Audio_Stream_InitialiseFromPath(
     stream->stop_at = -1.0; // negative value means unset
 
     stream->sdl.stream = SDL_NewAudioStream(
-        sdl_format, sdl_channels, sdl_sample_rate, AUDIO_WORKING_FORMAT,
-        sdl_channels, AUDIO_WORKING_RATE);
+        AUDIO_WORKING_FORMAT, sdl_channels, sdl_sample_rate,
+        AUDIO_WORKING_FORMAT, sdl_channels, AUDIO_WORKING_RATE);
     if (!stream->sdl.stream) {
         LOG_ERROR("Failed to create SDL stream: %s", SDL_GetError());
         goto cleanup;
@@ -342,6 +394,7 @@ void Audio_Stream_Init(void)
 
 void Audio_Stream_Shutdown(void)
 {
+    Memory_FreePointer(&m_DecodeBuffer);
     if (!g_AudioDeviceID) {
         return;
     }
@@ -429,14 +482,18 @@ bool Audio_Stream_Close(int32_t sound_id)
         stream->av.format_ctx = NULL;
     }
 
-    if (stream->av.packet) {
-        av_packet_free(&stream->av.packet);
-        stream->av.packet = NULL;
+    if (stream->swr.ctx) {
+        swr_free(&stream->swr.ctx);
     }
 
     if (stream->av.frame) {
         av_frame_free(&stream->av.frame);
         stream->av.frame = NULL;
+    }
+
+    if (stream->av.packet) {
+        av_packet_free(&stream->av.packet);
+        stream->av.packet = NULL;
     }
 
     stream->av.stream = NULL;
@@ -527,9 +584,9 @@ void Audio_Stream_Mix(float *dst_buffer, size_t len)
             }
         }
 
-        memset(m_DecodeBuffer, 0, READ_BUFFER_SIZE);
+        memset(m_MixBuffer, 0, READ_BUFFER_SIZE);
         int32_t bytes_gotten = SDL_AudioStreamGet(
-            stream->sdl.stream, m_DecodeBuffer, READ_BUFFER_SIZE);
+            stream->sdl.stream, m_MixBuffer, READ_BUFFER_SIZE);
         if (bytes_gotten < 0) {
             LOG_ERROR("Error reading from sdl.stream: %s", SDL_GetError());
             stream->is_playing = false;
@@ -543,21 +600,23 @@ void Audio_Stream_Mix(float *dst_buffer, size_t len)
             stream->is_read_done = true;
         } else {
             int32_t samples_gotten = bytes_gotten
-                / (stream->av.codec_ctx->channels
-                   * sizeof(AUDIO_WORKING_FORMAT));
+                / (AUDIO_WORKING_CHANNELS * sizeof(AUDIO_WORKING_FORMAT));
 
-            const float *src_ptr = &m_DecodeBuffer[0];
+            const float *src_ptr = &m_MixBuffer[0];
             float *dst_ptr = dst_buffer;
 
-            if (stream->av.codec_ctx->channels == 2) {
+            if (stream->av.codec_ctx->channels == AUDIO_WORKING_CHANNELS) {
                 for (int32_t s = 0; s < samples_gotten; s++) {
-                    *dst_ptr++ += *src_ptr++ * stream->volume;
-                    *dst_ptr++ += *src_ptr++ * stream->volume;
+                    for (int32_t c = 0; c < AUDIO_WORKING_CHANNELS; c++) {
+                        *dst_ptr++ += *src_ptr++ * stream->volume;
+                    }
                 }
             } else if (stream->av.codec_ctx->channels == 1) {
                 for (int32_t s = 0; s < samples_gotten; s++) {
-                    *dst_ptr++ += *src_ptr * stream->volume;
-                    *dst_ptr++ += *src_ptr++ * stream->volume;
+                    for (int32_t c = 0; c < AUDIO_WORKING_CHANNELS; c++) {
+                        *dst_ptr++ += *src_ptr * stream->volume;
+                    }
+                    src_ptr++;
                 }
             } else {
                 for (int32_t s = 0; s < samples_gotten; s++) {
@@ -568,8 +627,9 @@ void Audio_Stream_Mix(float *dst_buffer, size_t len)
                         src_sample += *src_ptr++;
                     }
                     src_sample /= (float)stream->av.codec_ctx->channels;
-                    *dst_ptr++ += src_sample * stream->volume;
-                    *dst_ptr++ += src_sample * stream->volume;
+                    for (int32_t c = 0; c < AUDIO_WORKING_CHANNELS; c++) {
+                        *dst_ptr++ += src_sample * stream->volume;
+                    }
                 }
             }
         }
