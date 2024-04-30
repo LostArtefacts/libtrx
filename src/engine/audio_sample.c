@@ -55,7 +55,7 @@ typedef struct AUDIO_AV_BUFFER {
 
 static int32_t m_LoadedSamplesCount = 0;
 static AUDIO_SAMPLE m_LoadedSamples[AUDIO_MAX_SAMPLES] = { 0 };
-static AUDIO_SAMPLE_SOUND m_Sample_s[AUDIO_MAX_ACTIVE_SAMPLES] = { 0 };
+static AUDIO_SAMPLE_SOUND m_Samples[AUDIO_MAX_ACTIVE_SAMPLES] = { 0 };
 
 static double Audio_DecibelToMultiplier(double db_gain)
 {
@@ -69,7 +69,7 @@ static bool Audio_SampleRecalculateChannelVolumes(int32_t sound_id)
         return false;
     }
 
-    AUDIO_SAMPLE_SOUND *sound = &m_Sample_s[sound_id];
+    AUDIO_SAMPLE_SOUND *sound = &m_Samples[sound_id];
     sound->volume_l = Audio_DecibelToMultiplier(
         sound->volume - (sound->pan > 0 ? sound->pan : 0));
     sound->volume_r = Audio_DecibelToMultiplier(
@@ -399,7 +399,7 @@ void Audio_Sample_Init(void)
 {
     for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
          sound_id++) {
-        AUDIO_SAMPLE_SOUND *sound = &m_Sample_s[sound_id];
+        AUDIO_SAMPLE_SOUND *sound = &m_Samples[sound_id];
         sound->is_used = false;
         sound->is_playing = false;
         sound->volume = 0.0f;
@@ -473,7 +473,7 @@ int32_t Audio_Sample_Play(
     SDL_LockAudioDevice(g_AudioDeviceID);
     for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
          sound_id++) {
-        AUDIO_SAMPLE_SOUND *sound = &m_Sample_s[sound_id];
+        AUDIO_SAMPLE_SOUND *sound = &m_Samples[sound_id];
         if (sound->is_used) {
             continue;
         }
@@ -508,7 +508,7 @@ bool Audio_Sample_IsPlaying(int32_t sound_id)
         return false;
     }
 
-    return m_Sample_s[sound_id].is_playing;
+    return m_Samples[sound_id].is_playing;
 }
 
 bool Audio_Sample_Pause(int32_t sound_id)
@@ -517,9 +517,9 @@ bool Audio_Sample_Pause(int32_t sound_id)
         return false;
     }
 
-    if (m_Sample_s[sound_id].is_playing) {
+    if (m_Samples[sound_id].is_playing) {
         SDL_LockAudioDevice(g_AudioDeviceID);
-        m_Sample_s[sound_id].is_playing = false;
+        m_Samples[sound_id].is_playing = false;
         SDL_UnlockAudioDevice(g_AudioDeviceID);
     }
 
@@ -534,7 +534,7 @@ bool Audio_Sample_PauseAll(void)
 
     for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
          sound_id++) {
-        if (m_Sample_s[sound_id].is_used) {
+        if (m_Samples[sound_id].is_used) {
             Audio_Sample_Pause(sound_id);
         }
     }
@@ -548,9 +548,9 @@ bool Audio_Sample_Unpause(int32_t sound_id)
         return false;
     }
 
-    if (!m_Sample_s[sound_id].is_playing) {
+    if (!m_Samples[sound_id].is_playing) {
         SDL_LockAudioDevice(g_AudioDeviceID);
-        m_Sample_s[sound_id].is_playing = true;
+        m_Samples[sound_id].is_playing = true;
         SDL_UnlockAudioDevice(g_AudioDeviceID);
     }
 
@@ -565,7 +565,7 @@ bool Audio_Sample_UnpauseAll(void)
 
     for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
          sound_id++) {
-        if (m_Sample_s[sound_id].is_used) {
+        if (m_Samples[sound_id].is_used) {
             Audio_Sample_Unpause(sound_id);
         }
     }
@@ -581,8 +581,8 @@ bool Audio_Sample_Close(int32_t sound_id)
     }
 
     SDL_LockAudioDevice(g_AudioDeviceID);
-    m_Sample_s[sound_id].is_used = false;
-    m_Sample_s[sound_id].is_playing = false;
+    m_Samples[sound_id].is_used = false;
+    m_Samples[sound_id].is_playing = false;
     SDL_UnlockAudioDevice(g_AudioDeviceID);
 
     return true;
@@ -596,7 +596,7 @@ bool Audio_Sample_CloseAll(void)
 
     for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
          sound_id++) {
-        if (m_Sample_s[sound_id].is_used) {
+        if (m_Samples[sound_id].is_used) {
             Audio_Sample_Close(sound_id);
         }
     }
@@ -612,7 +612,7 @@ bool Audio_Sample_SetPan(int32_t sound_id, int32_t pan)
     }
 
     SDL_LockAudioDevice(g_AudioDeviceID);
-    m_Sample_s[sound_id].pan = pan;
+    m_Samples[sound_id].pan = pan;
     Audio_SampleRecalculateChannelVolumes(sound_id);
     SDL_UnlockAudioDevice(g_AudioDeviceID);
 
@@ -627,7 +627,7 @@ bool Audio_Sample_SetVolume(int32_t sound_id, int32_t volume)
     }
 
     SDL_LockAudioDevice(g_AudioDeviceID);
-    m_Sample_s[sound_id].volume = volume;
+    m_Samples[sound_id].volume = volume;
     Audio_SampleRecalculateChannelVolumes(sound_id);
     SDL_UnlockAudioDevice(g_AudioDeviceID);
 
@@ -638,7 +638,7 @@ void Audio_Sample_Mix(float *dst_buffer, size_t len)
 {
     for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
          sound_id++) {
-        AUDIO_SAMPLE_SOUND *sound = &m_Sample_s[sound_id];
+        AUDIO_SAMPLE_SOUND *sound = &m_Samples[sound_id];
         if (!sound->is_playing) {
             continue;
         }
