@@ -23,12 +23,27 @@ if host_machine.system() == 'darwin'
   staticdeps = false
 endif
 
+null_dep = dependency('', required: false)
+dep_avcodec = dependency('libavcodec', static: staticdeps)
+dep_avformat = dependency('libavformat', static: staticdeps)
+dep_avutil = dependency('libavutil', static: staticdeps)
 dep_sdl2 = dependency('SDL2', static: staticdeps)
 dep_pcre2 = dependency('libpcre2-8', static: staticdeps)
 dep_backtrace = c_compiler.find_library('backtrace', static: true, required: false)
+dep_swscale = dependency('libswscale', static: staticdeps)
+dep_swresample = dependency('libswresample', static: staticdeps)
+
+dep_zlib = null_dep
+
+if not staticdeps
+  dep_zlib = dependency('zlib', static: staticdeps)
+endif
 
 sources = [
   'src/filesystem.c',
+  'src/engine/audio.c',
+  'src/engine/audio_sample.c',
+  'src/engine/audio_stream.c',
   'src/json/bson_parse.c',
   'src/json/bson_write.c',
   'src/json/json_base.c',
@@ -40,9 +55,15 @@ sources = [
 ]
 
 dependencies = [
+  dep_avcodec,
+  dep_avformat,
+  dep_avutil,
   dep_sdl2,
   dep_pcre2,
   dep_backtrace,
+  dep_swresample,
+  dep_swscale,
+  dep_zlib,
 ]
 
 if dep_backtrace.found() and host_machine.system() == 'linux'
