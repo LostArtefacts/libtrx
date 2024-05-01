@@ -17,6 +17,8 @@ typedef enum {
 
 typedef struct MYFILE MYFILE;
 
+bool File_DirExists(const char *path);
+
 bool File_IsAbsolute(const char *path);
 
 bool File_IsRelative(const char *path);

@@ -144,6 +144,18 @@ const char *File_GetGameDirectory(void)
     return m_GameDir;
 }
 
+bool File_DirExists(const char *path)
+{
+    char *full_path = File_GetFullPath(path);
+    DIR *dir = opendir(path);
+    Memory_FreePointer(&full_path);
+    if (dir != NULL) {
+        closedir(dir);
+        return true;
+    }
+    return false;
+}
+
 bool File_Exists(const char *path)
 {
     char *full_path = File_GetFullPath(path);
