@@ -45,3 +45,4 @@ bool Audio_Sample_Close(int32_t sound_id);
 bool Audio_Sample_CloseAll(void);
 bool Audio_Sample_SetPan(int32_t sound_id, int32_t pan);
 bool Audio_Sample_SetVolume(int32_t sound_id, int32_t volume);
+bool Audio_Sample_SetPitch(int32_t sound_id, float pan);

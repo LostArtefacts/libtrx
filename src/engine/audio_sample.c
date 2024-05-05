@@ -634,6 +634,21 @@ bool Audio_Sample_SetVolume(int32_t sound_id, int32_t volume)
     return true;
 }
 
+bool Audio_Sample_SetPitch(int32_t sound_id, float pitch)
+{
+    if (!g_AudioDeviceID || sound_id < 0
+        || sound_id >= AUDIO_MAX_ACTIVE_SAMPLES) {
+        return false;
+    }
+
+    SDL_LockAudioDevice(g_AudioDeviceID);
+    m_Samples[sound_id].pitch = pitch;
+    Audio_SampleRecalculateChannelVolumes(sound_id);
+    SDL_UnlockAudioDevice(g_AudioDeviceID);
+
+    return true;
+}
+
 void Audio_Sample_Mix(float *dst_buffer, size_t len)
 {
     for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
