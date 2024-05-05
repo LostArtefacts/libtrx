@@ -412,7 +412,7 @@ bool Audio_Sample_LoadSingle(
     LOG_INFO("Sample %d loaded (%d bytes)", sample_id, size);
 
 cleanup:
-    if (error_code > 0) {
+    if (error_code != 0) {
         LOG_ERROR(
             "Error while opening sample ID %d: %s", sample_id,
             av_err2str(error_code));
@@ -482,8 +482,12 @@ bool Audio_Sample_LoadMany(size_t count, const char **contents, size_t *sizes)
 int32_t Audio_Sample_Play(
     int32_t sample_id, int32_t volume, float pitch, int32_t pan, bool is_looped)
 {
-    if (!g_AudioDeviceID || sample_id < 0
-        || sample_id >= m_LoadedSamplesCount) {
+    if (!g_AudioDeviceID) {
+        return false;
+    }
+
+    if (sample_id < 0 || sample_id >= m_LoadedSamplesCount) {
+        LOG_DEBUG("Invalid sample id: %d", sample_id);
         return AUDIO_NO_SOUND;
     }
 
