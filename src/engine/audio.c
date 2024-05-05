@@ -78,9 +78,6 @@ bool Audio_Shutdown(void)
         return false;
     }
 
-    Audio_Sample_Shutdown();
-    Audio_Stream_Shutdown();
-
     if (g_AudioDeviceID) {
         SDL_PauseAudioDevice(g_AudioDeviceID, 1);
         SDL_CloseAudioDevice(g_AudioDeviceID);
@@ -88,6 +85,9 @@ bool Audio_Shutdown(void)
     }
 
     Memory_FreePointer(&m_MixBuffer);
+
+    Audio_Sample_Shutdown();
+    Audio_Stream_Shutdown();
     return true;
 }
 

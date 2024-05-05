@@ -441,6 +441,10 @@ bool Audio_Stream_Unpause(int32_t sound_id)
 
 int32_t Audio_Stream_CreateFromFile(const char *file_path)
 {
+    if (!g_AudioDeviceID) {
+        return AUDIO_NO_SOUND;
+    }
+
     assert(file_path != NULL);
 
     for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_STREAMS;
