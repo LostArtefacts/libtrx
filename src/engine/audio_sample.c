@@ -57,12 +57,19 @@ static int32_t m_LoadedSamplesCount = 0;
 static AUDIO_SAMPLE m_LoadedSamples[AUDIO_MAX_SAMPLES] = { 0 };
 static AUDIO_SAMPLE_SOUND m_Samples[AUDIO_MAX_ACTIVE_SAMPLES] = { 0 };
 
-static double Audio_DecibelToMultiplier(double db_gain)
+static double Audio_Sample_DecibelToMultiplier(double db_gain);
+static bool Audio_Sample_RecalculateChannelVolumes(int32_t sound_id);
+static int32_t Audio_Sample_ReadAVBuffer(
+    void *opaque, uint8_t *dst, int32_t dst_size);
+static int64_t Audio_Sample_SeekAVBuffer(
+    void *opaque, int64_t offset, int32_t whence);
+
+static double Audio_Sample_DecibelToMultiplier(double db_gain)
 {
     return pow(2.0, db_gain / 600.0);
 }
 
-static bool Audio_SampleRecalculateChannelVolumes(int32_t sound_id)
+static bool Audio_Sample_RecalculateChannelVolumes(int32_t sound_id)
 {
     if (!g_AudioDeviceID || sound_id < 0
         || sound_id >= AUDIO_MAX_ACTIVE_SAMPLES) {
@@ -70,15 +77,16 @@ static bool Audio_SampleRecalculateChannelVolumes(int32_t sound_id)
     }
 
     AUDIO_SAMPLE_SOUND *sound = &m_Samples[sound_id];
-    sound->volume_l = Audio_DecibelToMultiplier(
+    sound->volume_l = Audio_Sample_DecibelToMultiplier(
         sound->volume - (sound->pan > 0 ? sound->pan : 0));
-    sound->volume_r = Audio_DecibelToMultiplier(
+    sound->volume_r = Audio_Sample_DecibelToMultiplier(
         sound->volume + (sound->pan < 0 ? sound->pan : 0));
 
     return true;
 }
 
-static int32_t Audio_ReadAVBuffer(void *opaque, uint8_t *dst, int32_t dst_size)
+static int32_t Audio_Sample_ReadAVBuffer(
+    void *opaque, uint8_t *dst, int32_t dst_size)
 {
     assert(opaque != NULL);
     assert(dst != NULL);
@@ -93,7 +101,8 @@ static int32_t Audio_ReadAVBuffer(void *opaque, uint8_t *dst, int32_t dst_size)
     return read;
 }
 
-static int64_t Audio_SeekAVBuffer(void *opaque, int64_t offset, int32_t whence)
+static int64_t Audio_Sample_SeekAVBuffer(
+    void *opaque, int64_t offset, int32_t whence)
 {
     assert(opaque != NULL);
     AUDIO_AV_BUFFER *src = opaque;
@@ -187,8 +196,8 @@ static bool Audio_SampleLoad(
     };
 
     av.avio_context = avio_alloc_context(
-        read_buffer, av.read_buffer_size, 0, &av_buf, Audio_ReadAVBuffer, NULL,
-        Audio_SeekAVBuffer);
+        read_buffer, av.read_buffer_size, 0, &av_buf, Audio_Sample_ReadAVBuffer,
+        NULL, Audio_Sample_SeekAVBuffer);
 
     av.format_ctx = avformat_alloc_context();
     av.format_ctx->pb = av.avio_context;
@@ -487,7 +496,7 @@ int32_t Audio_Sample_Play(
         sound->current_sample = 0.0f;
         sound->sample = &m_LoadedSamples[sample_id];
 
-        Audio_SampleRecalculateChannelVolumes(sound_id);
+        Audio_Sample_RecalculateChannelVolumes(sound_id);
 
         result = sound_id;
         break;
@@ -613,7 +622,7 @@ bool Audio_Sample_SetPan(int32_t sound_id, int32_t pan)
 
     SDL_LockAudioDevice(g_AudioDeviceID);
     m_Samples[sound_id].pan = pan;
-    Audio_SampleRecalculateChannelVolumes(sound_id);
+    Audio_Sample_RecalculateChannelVolumes(sound_id);
     SDL_UnlockAudioDevice(g_AudioDeviceID);
 
     return true;
@@ -628,7 +637,7 @@ bool Audio_Sample_SetVolume(int32_t sound_id, int32_t volume)
 
     SDL_LockAudioDevice(g_AudioDeviceID);
     m_Samples[sound_id].volume = volume;
-    Audio_SampleRecalculateChannelVolumes(sound_id);
+    Audio_Sample_RecalculateChannelVolumes(sound_id);
     SDL_UnlockAudioDevice(g_AudioDeviceID);
 
     return true;
@@ -643,7 +652,7 @@ bool Audio_Sample_SetPitch(int32_t sound_id, float pitch)
 
     SDL_LockAudioDevice(g_AudioDeviceID);
     m_Samples[sound_id].pitch = pitch;
-    Audio_SampleRecalculateChannelVolumes(sound_id);
+    Audio_Sample_RecalculateChannelVolumes(sound_id);
     SDL_UnlockAudioDevice(g_AudioDeviceID);
 
     return true;
