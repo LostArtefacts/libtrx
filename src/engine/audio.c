@@ -40,9 +40,6 @@ bool Audio_Init(void)
         return false;
     }
 
-    Audio_Sample_Init();
-    Audio_Stream_Init();
-
     SDL_AudioSpec desired;
     SDL_memset(&desired, 0, sizeof(desired));
     desired.freq = AUDIO_WORKING_RATE;
@@ -67,6 +64,9 @@ bool Audio_Init(void)
     m_MixBuffer = Memory_Alloc(m_MixBufferCapacity);
 
     SDL_PauseAudioDevice(g_AudioDeviceID, 0);
+
+    Audio_Sample_Init();
+    Audio_Stream_Init();
 
     return true;
 }

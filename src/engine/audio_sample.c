@@ -135,17 +135,68 @@ static int64_t Audio_Sample_SeekAVBuffer(
     return src->ptr - src->data;
 }
 
-static bool Audio_SampleLoad(
-    int32_t sample_id, const char *content, size_t size)
+void Audio_Sample_Init(void)
 {
-    assert(content != NULL);
+    for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
+         sound_id++) {
+        AUDIO_SAMPLE_SOUND *sound = &m_Samples[sound_id];
+        sound->is_used = false;
+        sound->is_playing = false;
+        sound->volume = 0.0f;
+        sound->pitch = 1.0f;
+        sound->pan = 0.0f;
+        sound->current_sample = 0.0f;
+        sound->sample = NULL;
+    }
+}
 
-    if (!g_AudioDeviceID || sample_id < 0 || sample_id >= AUDIO_MAX_SAMPLES) {
+void Audio_Sample_Shutdown(void)
+{
+    if (!g_AudioDeviceID) {
+        return;
+    }
+
+    Audio_Sample_ClearAll();
+}
+
+bool Audio_Sample_ClearAll(void)
+{
+    if (!g_AudioDeviceID) {
         return false;
     }
 
-    bool ret = false;
-    AUDIO_SAMPLE *sample = &m_LoadedSamples[sample_id];
+    Audio_Sample_CloseAll();
+
+    m_LoadedSamplesCount = 0;
+    for (int32_t i = 0; i < AUDIO_MAX_SAMPLES; i++) {
+        Memory_FreePointer(&m_LoadedSamples[i].sample_data);
+    }
+
+    return true;
+}
+
+bool Audio_Sample_LoadSingle(
+    const int32_t sample_id, const char *const content, const size_t size)
+{
+    assert(content != NULL);
+
+    if (!g_AudioDeviceID) {
+        return false;
+    }
+
+    if (sample_id < 0 || sample_id >= AUDIO_MAX_SAMPLES) {
+        LOG_ERROR("Maximum allowed samples: %d", AUDIO_MAX_SAMPLES);
+        return false;
+    }
+
+    bool result = false;
+    AUDIO_SAMPLE *const sample = &m_LoadedSamples[sample_id];
+    if (sample->sample_data != NULL) {
+        LOG_ERROR(
+            "Sample %d is already loaded (trying to overwrite with %d bytes)",
+            sample_id, size);
+        return false;
+    }
 
     size_t working_buffer_size = 0;
     float *working_buffer = NULL;
@@ -355,8 +406,10 @@ static bool Audio_SampleLoad(
         working_buffer_size / sample_format_bytes / swr.dst_channels;
     sample->channels = swr.src_channels;
     sample->sample_data = working_buffer;
+    m_LoadedSamplesCount++;
+    result = true;
 
-    ret = true;
+    LOG_INFO("Sample %d loaded (%d bytes)", sample_id, size);
 
 cleanup:
     if (error_code > 0) {
@@ -379,11 +432,10 @@ cleanup:
 
     av.codec = NULL;
 
-    if (!ret) {
+    if (!result) {
         sample->sample_data = NULL;
         sample->num_samples = 0;
         sample->channels = 0;
-
         Memory_FreePointer(&working_buffer);
     }
 
@@ -401,49 +453,10 @@ cleanup:
         avio_context_free(&av.avio_context);
     }
 
-    return ret;
+    return result;
 }
 
-void Audio_Sample_Init(void)
-{
-    for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
-         sound_id++) {
-        AUDIO_SAMPLE_SOUND *sound = &m_Samples[sound_id];
-        sound->is_used = false;
-        sound->is_playing = false;
-        sound->volume = 0.0f;
-        sound->pitch = 1.0f;
-        sound->pan = 0.0f;
-        sound->current_sample = 0.0f;
-        sound->sample = NULL;
-    }
-}
-
-void Audio_Sample_Shutdown(void)
-{
-    if (!g_AudioDeviceID) {
-        return;
-    }
-
-    Audio_Sample_ClearAll();
-}
-
-bool Audio_Sample_ClearAll(void)
-{
-    if (!g_AudioDeviceID) {
-        return false;
-    }
-
-    Audio_Sample_CloseAll();
-
-    for (int32_t i = 0; i < AUDIO_MAX_SAMPLES; i++) {
-        Memory_FreePointer(&m_LoadedSamples[i].sample_data);
-    }
-
-    return true;
-}
-
-bool Audio_Sample_Load(size_t count, const char **contents, size_t *sizes)
+bool Audio_Sample_LoadMany(size_t count, const char **contents, size_t *sizes)
 {
     assert(contents != NULL);
     assert(sizes != NULL);
@@ -457,13 +470,10 @@ bool Audio_Sample_Load(size_t count, const char **contents, size_t *sizes)
     Audio_Sample_ClearAll();
 
     bool result = true;
-    for (int32_t sample_id = 0; sample_id < (int32_t)count; sample_id++) {
-        result &=
-            Audio_SampleLoad(sample_id, contents[sample_id], sizes[sample_id]);
+    for (int32_t i = 0; i < (int32_t)count; i++) {
+        result &= Audio_Sample_LoadSingle(i, contents[i], sizes[i]);
     }
-    if (result) {
-        m_LoadedSamplesCount = count;
-    } else {
+    if (!result) {
         Audio_Sample_ClearAll();
     }
     return result;
