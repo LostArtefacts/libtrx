@@ -156,22 +156,44 @@ void Audio_Sample_Shutdown(void)
         return;
     }
 
-    Audio_Sample_ClearAll();
+    Audio_Sample_CloseAll();
+    Audio_Sample_UnloadAll();
 }
 
-bool Audio_Sample_ClearAll(void)
+bool Audio_Sample_Unload(const int32_t sample_id)
 {
     if (!g_AudioDeviceID) {
+        LOG_ERROR("Unitialized audio device");
         return false;
     }
 
-    Audio_Sample_CloseAll();
+    if (sample_id < 0 || sample_id >= AUDIO_MAX_SAMPLES) {
+        LOG_ERROR("Maximum allowed samples: %d", AUDIO_MAX_SAMPLES);
+        return false;
+    }
+
+    bool result = false;
+    AUDIO_SAMPLE *const sample = &m_LoadedSamples[sample_id];
+    if (sample->sample_data == NULL) {
+        LOG_ERROR("Sample %d is already unloaded", sample_id);
+        return false;
+    }
+    Memory_FreePointer(&sample->sample_data);
+    m_LoadedSamplesCount--;
+    return true;
+}
+
+bool Audio_Sample_UnloadAll(void)
+{
+    if (!g_AudioDeviceID) {
+        LOG_ERROR("Unitialized audio device");
+        return false;
+    }
 
     m_LoadedSamplesCount = 0;
     for (int32_t i = 0; i < AUDIO_MAX_SAMPLES; i++) {
         Memory_FreePointer(&m_LoadedSamples[i].sample_data);
     }
-
     return true;
 }
 
@@ -181,6 +203,7 @@ bool Audio_Sample_LoadSingle(
     assert(content != NULL);
 
     if (!g_AudioDeviceID) {
+        LOG_ERROR("Unitialized audio device");
         return false;
     }
 
@@ -467,14 +490,15 @@ bool Audio_Sample_LoadMany(size_t count, const char **contents, size_t *sizes)
 
     assert(count <= AUDIO_MAX_SAMPLES);
 
-    Audio_Sample_ClearAll();
+    Audio_Sample_CloseAll();
+    Audio_Sample_UnloadAll();
 
     bool result = true;
     for (int32_t i = 0; i < (int32_t)count; i++) {
         result &= Audio_Sample_LoadSingle(i, contents[i], sizes[i]);
     }
     if (!result) {
-        Audio_Sample_ClearAll();
+        Audio_Sample_UnloadAll();
     }
     return result;
 }
@@ -483,6 +507,7 @@ int32_t Audio_Sample_Play(
     int32_t sample_id, int32_t volume, float pitch, int32_t pan, bool is_looped)
 {
     if (!g_AudioDeviceID) {
+        LOG_ERROR("audio device is unavailable");
         return false;
     }
 
