@@ -63,8 +63,8 @@ class CommitCommand(BaseCommand):
             print(new_changelog, end="")
             return
 
-        self.changelog_path.write_text(new_changelog)
-        self.git.add(self.changelog_path)
+        options.changelog_path.write_text(new_changelog)
+        self.git.add(options.changelog_path)
         self.git.commit(f"docs: release {args.version}")
         self.git.delete_tag(args.version)
         self.git.create_tag(args.version)
