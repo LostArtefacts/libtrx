@@ -229,6 +229,7 @@ MYFILE *File_Open(const char *path, FILE_OPEN_MODE mode)
     }
     Memory_FreePointer(&full_path);
     if (!file->fp) {
+        Memory_FreePointer(&file->path);
         Memory_FreePointer(&file);
     }
     return file;
