@@ -52,6 +52,7 @@ sources = [
   'src/log.c',
   'src/memory.c',
   'src/strings.c',
+  'src/vector.c',
 ]
 
 dependencies = [
