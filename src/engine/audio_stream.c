@@ -204,8 +204,8 @@ static bool Audio_Stream_EnqueueFrame(AUDIO_STREAM_SOUND *stream)
                 NULL, stream->swr.dst_channels, resampled_size,
                 stream->swr.dst_format, 1);
 
-            if (out_buffer_size > m_DecodeBufferCapacity) {
-                m_DecodeBufferCapacity += out_buffer_size;
+            if (out_pos + out_buffer_size > m_DecodeBufferCapacity) {
+                m_DecodeBufferCapacity = out_pos + out_buffer_size;
                 m_DecodeBuffer =
                     Memory_Realloc(m_DecodeBuffer, m_DecodeBufferCapacity);
             }
