@@ -342,7 +342,7 @@ static bool Audio_Stream_InitialiseFromPath(
     stream->stop_at = -1.0; // negative value means unset
 
     stream->sdl.stream = SDL_NewAudioStream(
-        AUDIO_WORKING_FORMAT, sdl_channels, sdl_sample_rate,
+        AUDIO_WORKING_FORMAT, sdl_channels, AUDIO_WORKING_RATE,
         AUDIO_WORKING_FORMAT, sdl_channels, AUDIO_WORKING_RATE);
     if (!stream->sdl.stream) {
         LOG_ERROR("Failed to create SDL stream: %s", SDL_GetError());
