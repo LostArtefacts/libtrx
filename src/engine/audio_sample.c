@@ -22,8 +22,12 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 typedef struct AUDIO_SAMPLE {
+    char *original_data;
+    size_t original_size;
+
     float *sample_data;
     int32_t channels;
     int32_t num_samples;
@@ -63,6 +67,7 @@ static int32_t Audio_Sample_ReadAVBuffer(
     void *opaque, uint8_t *dst, int32_t dst_size);
 static int64_t Audio_Sample_SeekAVBuffer(
     void *opaque, int64_t offset, int32_t whence);
+static bool Audio_Sample_Convert(const int32_t sample_id);
 
 static double Audio_Sample_DecibelToMultiplier(double db_gain)
 {
@@ -135,92 +140,18 @@ static int64_t Audio_Sample_SeekAVBuffer(
     return src->ptr - src->data;
 }
 
-void Audio_Sample_Init(void)
+static bool Audio_Sample_Convert(const int32_t sample_id)
 {
-    for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
-         sound_id++) {
-        AUDIO_SAMPLE_SOUND *sound = &m_Samples[sound_id];
-        sound->is_used = false;
-        sound->is_playing = false;
-        sound->volume = 0.0f;
-        sound->pitch = 1.0f;
-        sound->pan = 0.0f;
-        sound->current_sample = 0.0f;
-        sound->sample = NULL;
-    }
-}
-
-void Audio_Sample_Shutdown(void)
-{
-    if (!g_AudioDeviceID) {
-        return;
-    }
-
-    Audio_Sample_CloseAll();
-    Audio_Sample_UnloadAll();
-}
-
-bool Audio_Sample_Unload(const int32_t sample_id)
-{
-    if (!g_AudioDeviceID) {
-        LOG_ERROR("Unitialized audio device");
-        return false;
-    }
-
-    if (sample_id < 0 || sample_id >= AUDIO_MAX_SAMPLES) {
-        LOG_ERROR("Maximum allowed samples: %d", AUDIO_MAX_SAMPLES);
-        return false;
-    }
+    assert(sample_id >= 0 && sample_id < m_LoadedSamplesCount);
 
     bool result = false;
     AUDIO_SAMPLE *const sample = &m_LoadedSamples[sample_id];
-    if (sample->sample_data == NULL) {
-        LOG_ERROR("Sample %d is already unloaded", sample_id);
-        return false;
-    }
-    Memory_FreePointer(&sample->sample_data);
-    m_LoadedSamplesCount--;
-    return true;
-}
 
-bool Audio_Sample_UnloadAll(void)
-{
-    if (!g_AudioDeviceID) {
-        LOG_ERROR("Unitialized audio device");
-        return false;
-    }
-
-    m_LoadedSamplesCount = 0;
-    for (int32_t i = 0; i < AUDIO_MAX_SAMPLES; i++) {
-        Memory_FreePointer(&m_LoadedSamples[i].sample_data);
-    }
-    return true;
-}
-
-bool Audio_Sample_LoadSingle(
-    const int32_t sample_id, const char *const content, const size_t size)
-{
-    assert(content != NULL);
-
-    if (!g_AudioDeviceID) {
-        LOG_ERROR("Unitialized audio device");
-        return false;
-    }
-
-    if (sample_id < 0 || sample_id >= AUDIO_MAX_SAMPLES) {
-        LOG_ERROR("Maximum allowed samples: %d", AUDIO_MAX_SAMPLES);
-        return false;
-    }
-
-    bool result = false;
-    AUDIO_SAMPLE *const sample = &m_LoadedSamples[sample_id];
     if (sample->sample_data != NULL) {
-        LOG_ERROR(
-            "Sample %d is already loaded (trying to overwrite with %d bytes)",
-            sample_id, size);
-        return false;
+        return true;
     }
 
+    const clock_t time_start = clock();
     size_t working_buffer_size = 0;
     float *working_buffer = NULL;
 
@@ -263,10 +194,10 @@ bool Audio_Sample_LoadSingle(
     }
 
     AUDIO_AV_BUFFER av_buf = {
-        .data = content,
-        .ptr = content,
-        .size = size,
-        .remaining = size,
+        .data = sample->original_data,
+        .ptr = sample->original_data,
+        .size = sample->original_size,
+        .remaining = sample->original_size,
     };
 
     av.avio_context = avio_alloc_context(
@@ -429,10 +360,14 @@ bool Audio_Sample_LoadSingle(
         working_buffer_size / sample_format_bytes / swr.dst_channels;
     sample->channels = swr.src_channels;
     sample->sample_data = working_buffer;
-    m_LoadedSamplesCount++;
     result = true;
 
-    LOG_INFO("Sample %d loaded (%d bytes)", sample_id, size);
+    const clock_t time_end = clock();
+    const double time_delta =
+        (((double)(time_end - time_start)) / CLOCKS_PER_SEC) * 1000.0f;
+    LOG_DEBUG(
+        "Sample %d decoded (%.0f ms)", sample_id, sample->original_size,
+        time_delta);
 
 cleanup:
     if (error_code != 0) {
@@ -457,6 +392,8 @@ cleanup:
 
     if (!result) {
         sample->sample_data = NULL;
+        sample->original_data = NULL;
+        sample->original_size = 0;
         sample->num_samples = 0;
         sample->channels = 0;
         Memory_FreePointer(&working_buffer);
@@ -477,6 +414,102 @@ cleanup:
     }
 
     return result;
+}
+
+void Audio_Sample_Init(void)
+{
+    for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_SAMPLES;
+         sound_id++) {
+        AUDIO_SAMPLE_SOUND *sound = &m_Samples[sound_id];
+        sound->is_used = false;
+        sound->is_playing = false;
+        sound->volume = 0.0f;
+        sound->pitch = 1.0f;
+        sound->pan = 0.0f;
+        sound->current_sample = 0.0f;
+        sound->sample = NULL;
+    }
+}
+
+void Audio_Sample_Shutdown(void)
+{
+    if (!g_AudioDeviceID) {
+        return;
+    }
+
+    Audio_Sample_CloseAll();
+    Audio_Sample_UnloadAll();
+}
+
+bool Audio_Sample_Unload(const int32_t sample_id)
+{
+    if (!g_AudioDeviceID) {
+        LOG_ERROR("Unitialized audio device");
+        return false;
+    }
+
+    if (sample_id < 0 || sample_id >= AUDIO_MAX_SAMPLES) {
+        LOG_ERROR("Maximum allowed samples: %d", AUDIO_MAX_SAMPLES);
+        return false;
+    }
+
+    bool result = false;
+    AUDIO_SAMPLE *const sample = &m_LoadedSamples[sample_id];
+    if (sample->sample_data == NULL) {
+        LOG_ERROR("Sample %d is already unloaded", sample_id);
+        return false;
+    }
+    Memory_FreePointer(&sample->sample_data);
+    Memory_FreePointer(&sample->original_data);
+    m_LoadedSamplesCount--;
+    return true;
+}
+
+bool Audio_Sample_UnloadAll(void)
+{
+    if (!g_AudioDeviceID) {
+        LOG_ERROR("Unitialized audio device");
+        return false;
+    }
+
+    m_LoadedSamplesCount = 0;
+    for (int32_t i = 0; i < AUDIO_MAX_SAMPLES; i++) {
+        AUDIO_SAMPLE *const sample = &m_LoadedSamples[i];
+        Memory_FreePointer(&sample->sample_data);
+        Memory_FreePointer(&sample->original_data);
+    }
+    return true;
+}
+
+bool Audio_Sample_LoadSingle(
+    const int32_t sample_id, const char *const data, const size_t size)
+{
+    assert(data != NULL);
+
+    if (!g_AudioDeviceID) {
+        LOG_ERROR("Unitialized audio device");
+        return false;
+    }
+
+    if (sample_id < 0 || sample_id >= AUDIO_MAX_SAMPLES) {
+        LOG_ERROR("Maximum allowed samples: %d", AUDIO_MAX_SAMPLES);
+        return false;
+    }
+
+    AUDIO_SAMPLE *const sample = &m_LoadedSamples[sample_id];
+    if (sample->original_data != NULL) {
+        LOG_ERROR(
+            "Sample %d is already loaded (trying to overwrite with %d bytes)",
+            sample_id, size);
+        return false;
+    }
+
+    sample->original_data = Memory_Alloc(size);
+    sample->original_size = size;
+    memcpy(sample->original_data, data, size);
+    m_LoadedSamplesCount++;
+    LOG_ERROR("Sample %d loaded (%d bytes)", sample_id, size);
+    return true;
 }
 
 bool Audio_Sample_LoadMany(size_t count, const char **contents, size_t *sizes)
@@ -525,6 +558,8 @@ int32_t Audio_Sample_Play(
         if (sound->is_used) {
             continue;
         }
+
+        Audio_Sample_Convert(sample_id);
 
         sound->is_used = true;
         sound->is_playing = true;
