@@ -235,27 +235,100 @@ MYFILE *File_Open(const char *path, FILE_OPEN_MODE mode)
     return file;
 }
 
-size_t File_Read(void *data, size_t item_size, size_t count, MYFILE *file)
+void File_ReadData(MYFILE *const file, void *const data, const size_t size)
 {
-    return fread(data, item_size, count, file->fp);
+    fread(data, size, 1, file->fp);
 }
 
-size_t File_Write(
-    const void *data, size_t item_size, size_t count, MYFILE *file)
+void File_ReadItems(
+    MYFILE *const file, void *data, const size_t count, const size_t item_size)
 {
-    return fwrite(data, item_size, count, file->fp);
+    fread(data, item_size, count, file->fp);
 }
 
-void File_CreateDirectory(const char *path)
+int8_t File_ReadS8(MYFILE *const file)
 {
-    char *full_path = File_GetFullPath(path);
-    assert(full_path);
-#if defined(_WIN32)
-    _mkdir(full_path);
-#else
-    mkdir(full_path, 0775);
-#endif
-    Memory_FreePointer(&full_path);
+    int8_t result;
+    fread(&result, sizeof(result), 1, file->fp);
+    return result;
+}
+
+int16_t File_ReadS16(MYFILE *const file)
+{
+    int16_t result;
+    fread(&result, sizeof(result), 1, file->fp);
+    return result;
+}
+
+int32_t File_ReadS32(MYFILE *const file)
+{
+    int32_t result;
+    fread(&result, sizeof(result), 1, file->fp);
+    return result;
+}
+
+uint8_t File_ReadU8(MYFILE *const file)
+{
+    uint8_t result;
+    fread(&result, sizeof(result), 1, file->fp);
+    return result;
+}
+
+uint16_t File_ReadU16(MYFILE *const file)
+{
+    uint16_t result;
+    fread(&result, sizeof(result), 1, file->fp);
+    return result;
+}
+
+uint32_t File_ReadU32(MYFILE *const file)
+{
+    uint32_t result;
+    fread(&result, sizeof(result), 1, file->fp);
+    return result;
+}
+
+void File_WriteData(
+    MYFILE *const file, const void *const data, const size_t size)
+{
+    fwrite(data, size, 1, file->fp);
+}
+
+void File_WriteItems(
+    MYFILE *const file, const void *const data, const size_t count,
+    const size_t item_size)
+{
+    fwrite(data, item_size, count, file->fp);
+}
+
+void File_WriteS8(MYFILE *const file, const int8_t value)
+{
+    fwrite(&value, sizeof(value), 1, file->fp);
+}
+
+void File_WriteS16(MYFILE *const file, const int16_t value)
+{
+    fwrite(&value, sizeof(value), 1, file->fp);
+}
+
+void File_WriteS32(MYFILE *const file, const int32_t value)
+{
+    fwrite(&value, sizeof(value), 1, file->fp);
+}
+
+void File_WriteU8(MYFILE *const file, const uint8_t value)
+{
+    fwrite(&value, sizeof(value), 1, file->fp);
+}
+
+void File_WriteU16(MYFILE *const file, const uint16_t value)
+{
+    fwrite(&value, sizeof(value), 1, file->fp);
+}
+
+void File_WriteU32(MYFILE *const file, const uint32_t value)
+{
+    fwrite(&value, sizeof(value), 1, file->fp);
 }
 
 void File_Skip(MYFILE *file, size_t bytes)
@@ -314,7 +387,8 @@ bool File_Load(const char *path, char **output_data, size_t *output_size)
 
     size_t data_size = File_Size(fp);
     char *data = Memory_Alloc(data_size + 1);
-    if (File_Read(data, sizeof(char), data_size, fp) != data_size) {
+    File_ReadData(fp, data, data_size);
+    if (File_Pos(fp) != data_size) {
         LOG_ERROR("Can't read file %s", path);
         Memory_FreePointer(&data);
         return false;
@@ -327,4 +401,16 @@ bool File_Load(const char *path, char **output_data, size_t *output_size)
         *output_size = data_size;
     }
     return true;
+}
+
+void File_CreateDirectory(const char *path)
+{
+    char *full_path = File_GetFullPath(path);
+    assert(full_path);
+#if defined(_WIN32)
+    _mkdir(full_path);
+#else
+    mkdir(full_path, 0775);
+#endif
+    Memory_FreePointer(&full_path);
 }
