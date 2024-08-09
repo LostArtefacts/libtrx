@@ -31,6 +31,11 @@ void Memory_Free(void *memory);
 // also an error.
 void Memory_FreePointer(void *memory);
 
+// Duplicates a buffer. In case the memory allocation fails, shows an error to
+// the user and exits the application.
+// Giving a NULL to this function is a fatal error.
+char *Memory_Dup(const char *buffer, size_t size);
+
 // Duplicates a string. In case the memory allocation fails, shows an error to
 // the user and exits the application. The string must be NULL-terminated.
 // Giving a NULL to this function is a fatal error.

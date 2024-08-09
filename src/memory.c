@@ -35,6 +35,14 @@ void Memory_FreePointer(void *arg)
     Memory_Free(memory);
 }
 
+char *Memory_Dup(const char *const buffer, const size_t size)
+{
+    assert(buffer != NULL);
+    char *memory = Memory_Alloc(size);
+    memcpy(memory, buffer, size);
+    return memory;
+}
+
 char *Memory_DupStr(const char *const string)
 {
     assert(string != NULL);
