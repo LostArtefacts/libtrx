@@ -40,6 +40,7 @@ if not staticdeps
 endif
 
 sources = [
+  'src/benchmark.c',
   'src/filesystem.c',
   'src/engine/audio.c',
   'src/engine/audio_sample.c',
