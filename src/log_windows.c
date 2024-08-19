@@ -2,6 +2,7 @@
 
 #include "memory.h"
 
+#include <dwarfstack.h>
 #include <process.h>
 #include <signal.h>
 #include <stdio.h>
@@ -13,7 +14,9 @@
 static char *m_MiniDumpPath = NULL;
 static char *Log_GetMiniDumpPath(const char *log_path);
 static void Log_CreateMiniDump(EXCEPTION_POINTERS *ex, const char *path);
-static void Log_LogStackTraces(EXCEPTION_POINTERS *ex);
+static void Log_StackTrace(
+    uint64_t addr, const char *filename, int line_no, const char *func_name,
+    void *context, int column_no);
 
 static char *Log_GetMiniDumpPath(const char *const log_path)
 {
@@ -29,6 +32,40 @@ static char *Log_GetMiniDumpPath(const char *const log_path)
     strncpy(minidump_path, log_path, index);
     strcat(minidump_path, new_extension);
     return minidump_path;
+}
+
+static void Log_StackTrace(
+    const uint64_t addr, const char *filename, const int line_no,
+    const char *const func_name, void *const context, const int column_no)
+{
+    int32_t *count = context;
+    void *ptr = (void *)(uintptr_t)addr;
+
+    switch (line_no) {
+    case DWST_BASE_ADDR:
+        LOG_INFO("--- 0x%p: %s", ptr, filename);
+        break;
+
+    case DWST_NOT_FOUND:
+    case DWST_NO_DBG_SYM:
+    case DWST_NO_SRC_FILE:
+        LOG_INFO("%02d. 0x%p: %s", *count, ptr, filename);
+        (*count)++;
+        break;
+
+    default:
+        if (ptr != NULL) {
+            LOG_INFO(
+                "%02d. 0x%p: (%s:%d:%d) %s", *count, ptr, filename, line_no,
+                column_no, func_name);
+        } else {
+            LOG_INFO(
+                "%02d. %*s (%s:%d:%d) %s", *count, (int32_t)sizeof(void *) * 2,
+                "", filename, line_no, column_no, func_name);
+        }
+        (*count)++;
+        break;
+    }
 }
 
 static void Log_CreateMiniDump(
@@ -49,91 +86,18 @@ static void Log_CreateMiniDump(
     LOG_INFO("Crash dump info put in %s", path);
 }
 
-static void Log_LogStackTraces(EXCEPTION_POINTERS *const ex)
-{
-    LOG_ERROR("== CRASH REPORT ==");
-
-    HANDLE thread = GetCurrentThread();
-    HANDLE process = GetCurrentProcess();
-
-    CONTEXT context = {};
-    context.ContextFlags = CONTEXT_FULL;
-
-    if (thread != GetCurrentThread()) {
-        SuspendThread(thread);
-        if (GetThreadContext(thread, &context) == FALSE) {
-            printf("Failed to get context\n");
-            return;
-        }
-        ResumeThread(thread);
-    }
-    RtlCaptureContext(&context);
-
-    SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_UNDNAME);
-
-    if (!SymInitialize(process, 0, TRUE)) {
-        LOG_ERROR("Failed to call SymInitialize");
-        return;
-    }
-
-    DWORD image;
-    STACKFRAME64 stackframe;
-    ZeroMemory(&stackframe, sizeof(STACKFRAME64));
-
-#ifdef _M_IX86
-    image = IMAGE_FILE_MACHINE_I386;
-    stackframe.AddrPC.Offset = context.Eip;
-    stackframe.AddrPC.Mode = AddrModeFlat;
-    stackframe.AddrFrame.Offset = context.Ebp;
-    stackframe.AddrFrame.Mode = AddrModeFlat;
-    stackframe.AddrStack.Offset = context.Esp;
-    stackframe.AddrStack.Mode = AddrModeFlat;
-#elif _M_X64
-    image = IMAGE_FILE_MACHINE_AMD64;
-    stackframe.AddrPC.Offset = context.Rip;
-    stackframe.AddrPC.Mode = AddrModeFlat;
-    stackframe.AddrFrame.Offset = context.Rsp;
-    stackframe.AddrFrame.Mode = AddrModeFlat;
-    stackframe.AddrStack.Offset = context.Rsp;
-    stackframe.AddrStack.Mode = AddrModeFlat;
-#endif
-
-    while (StackWalk64(
-        image, process, thread, &stackframe, &context, 0,
-        SymFunctionTableAccess64, SymGetModuleBase64, 0)) {
-        char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
-        PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer;
-
-        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-        symbol->MaxNameLen = MAX_SYM_NAME;
-
-        DWORD64 displacement64 = 0;
-        if (SymFromAddr(
-                process, stackframe.AddrPC.Offset, &displacement64, symbol)) {
-            IMAGEHLP_LINE64 line;
-            DWORD displacement32;
-            line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-            if (SymGetLineFromAddr64(
-                    process, stackframe.AddrPC.Offset, &displacement32,
-                    &line)) {
-                LOG_INFO(
-                    "0x%08llX: %s (%s:%d)", symbol->Address, symbol->Name,
-                    line.FileName, line.LineNumber);
-            } else {
-                LOG_INFO("0x%08llX: %s", symbol->Address, symbol->Name);
-            }
-        } else {
-            LOG_INFO("0x%08llX: ???", symbol->Address);
-        }
-    }
-
-    SymCleanup(process);
-}
-
 LONG WINAPI Log_CrashHandler(EXCEPTION_POINTERS *ex)
 {
+    LOG_ERROR("== CRASH REPORT ==");
+    LOG_INFO("EXCEPTION CODE: %x", ex->ExceptionRecord->ExceptionCode);
+    LOG_INFO("EXCEPTION ADDRESS: %x", ex->ExceptionRecord->ExceptionAddress);
+    LOG_INFO("STACK TRACE:");
+
+    int32_t count = 0;
+    dwstOfException(ex->ContextRecord, &Log_StackTrace, &count);
+
     Log_CreateMiniDump(ex, m_MiniDumpPath);
-    Log_LogStackTraces(ex);
+
     return EXCEPTION_EXECUTE_HANDLER;
 }
 

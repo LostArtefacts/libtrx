@@ -15,6 +15,7 @@ build_opts = [
   '-fmacro-prefix-map=@0@/src=libtrx'.format(relative_dir),
   '-Wno-unused',
   '-DMESON_BUILD',
+  '-DDWST_STATIC',
   '-DPCRE2_STATIC',
   '-DPCRE2_CODE_UNIT_WIDTH=8',
 ]
@@ -76,8 +77,10 @@ if dep_backtrace.found() and host_machine.system() == 'linux'
   sources += ['src/log_linux.c']
 elif host_machine.system() == 'windows'
   sources += ['src/log_windows.c']
+  dwarfstack = subproject('dwarfstack', default_options: ['warning_level=0'])
+  dep_dwarfstack = dwarfstack.get_variable('dep_dwarfstack')
   dep_dbghelp = c_compiler.find_library('dbghelp')
-  dependencies += [dep_dbghelp]
+  dependencies += [dep_dbghelp, dep_dwarfstack]
 else
   sources += ['src/log_unknown.c']
 endif
