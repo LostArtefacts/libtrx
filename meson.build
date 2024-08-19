@@ -7,8 +7,12 @@ project(
   ],
 )
 
+fs = import('fs')
+
 c_compiler = meson.get_compiler('c')
+relative_dir = fs.relative_to(meson.current_source_dir(), meson.global_build_root())
 build_opts = [
+  '-fmacro-prefix-map=@0@/src=libtrx'.format(relative_dir),
   '-Wno-unused',
   '-DMESON_BUILD',
   '-DPCRE2_STATIC',
