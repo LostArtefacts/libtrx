@@ -46,10 +46,10 @@ endif
 
 sources = [
   'src/benchmark.c',
-  'src/filesystem.c',
   'src/engine/audio.c',
   'src/engine/audio_sample.c',
   'src/engine/audio_stream.c',
+  'src/filesystem.c',
   'src/json/bson_parse.c',
   'src/json/bson_write.c',
   'src/json/json_base.c',
@@ -59,6 +59,7 @@ sources = [
   'src/memory.c',
   'src/strings.c',
   'src/vector.c',
+  'src/virtual_file.c',
 ]
 
 dependencies = [
