@@ -391,6 +391,7 @@ bool File_Load(const char *path, char **output_data, size_t *output_size)
     if (File_Pos(fp) != data_size) {
         LOG_ERROR("Can't read file %s", path);
         Memory_FreePointer(&data);
+        File_Close(fp);
         return false;
     }
     File_Close(fp);
