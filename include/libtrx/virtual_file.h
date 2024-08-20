@@ -8,6 +8,7 @@ typedef struct {
     char *cur_ptr;
 } VFILE;
 
+VFILE *VFile_CreateFromPath(const char *path);
 VFILE *VFile_CreateFromBuffer(const char *data, size_t size);
 void VFile_Close(VFILE *file);
 

@@ -1,9 +1,37 @@
 #include "virtual_file.h"
 
+#include "filesystem.h"
+#include "log.h"
 #include "memory.h"
 
 #include <assert.h>
 #include <string.h>
+
+VFILE *VFile_CreateFromPath(const char *const path)
+{
+    MYFILE *fp = File_Open(path, FILE_OPEN_READ);
+    if (!fp) {
+        LOG_ERROR("Can't open file %s", path);
+        return NULL;
+    }
+
+    const size_t data_size = File_Size(fp);
+    char *data = Memory_Alloc(data_size);
+    File_ReadData(fp, data, data_size);
+    if (File_Pos(fp) != data_size) {
+        LOG_ERROR("Can't read file %s", path);
+        Memory_FreePointer(&data);
+        File_Close(fp);
+        return NULL;
+    }
+    File_Close(fp);
+
+    VFILE *const file = Memory_Alloc(sizeof(VFILE));
+    file->content = data;
+    file->size = data_size;
+    file->cur_ptr = file->content;
+    return file;
+}
 
 VFILE *VFile_CreateFromBuffer(const char *data, size_t size)
 {
