@@ -1,6 +1,7 @@
 #include "config_option.h"
 
 #include "../enum_str.h"
+#include "../utils.h"
 
 #include <stdbool.h>
 #include <stddef.h>
