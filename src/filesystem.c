@@ -46,10 +46,13 @@ static char *File_CasePath(char const *path)
 {
     assert(path);
 
-    char *current_path = Memory_Alloc(strlen(path) + 2);
-
     char *path_copy = Memory_DupStr(path);
+    if (File_ExistsRaw(path)) {
+        return path_copy;
+    }
+
     char *path_piece = path_copy;
+    char *current_path = Memory_Alloc(strlen(path) + 2);
 
     if (path_copy[0] == '/') {
         strcpy(current_path, "/");
