@@ -107,3 +107,62 @@ int32_t String_Match(const char *const subject, const char *const pattern)
 
     return match_length;
 }
+
+bool String_ParseBool(const char *const value, bool *const target)
+{
+    if (String_Match(value, "0|false|off")) {
+        if (target != NULL) {
+            *target = false;
+        }
+        return true;
+    }
+
+    if (String_Match(value, "1|true|on")) {
+        if (target != NULL) {
+            *target = true;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+bool String_ParseInteger(const char *const value, int32_t *const target)
+{
+    for (size_t i = 0; i < strlen(value); i++) {
+        if (i == 0 && value[i] == '-') {
+            continue;
+        }
+        if (!isdigit(value[i])) {
+            return false;
+        }
+    }
+    if (target != NULL) {
+        *target = atoi(value);
+    }
+    return true;
+}
+
+bool String_ParseDecimal(const char *const value, float *const target)
+{
+    bool has_dot = false;
+    for (size_t i = 0; i < strlen(value); i++) {
+        if (i == 0 && value[i] == '-') {
+            continue;
+        }
+        if (!isdigit(value[i])) {
+            if (value[i] == '.') {
+                if (has_dot) {
+                    return false;
+                }
+                has_dot = true;
+            } else {
+                return false;
+            }
+        }
+    }
+    if (target != NULL) {
+        *target = atof(value);
+    }
+    return true;
+}
