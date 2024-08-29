@@ -45,6 +45,7 @@ if not staticdeps
 endif
 
 sources = [
+  'src/arg_parser.c',
   'src/benchmark.c',
   'src/config/config_file.c',
   'src/engine/audio.c',
