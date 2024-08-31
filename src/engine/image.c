@@ -22,6 +22,161 @@
 #include <stdint.h>
 #include <string.h>
 
+typedef struct {
+    struct {
+        int32_t x;
+        int32_t y;
+        int32_t width;
+        int32_t height;
+    } src, dst;
+} IMAGE_BLIT;
+
+typedef struct {
+    int error_code;
+    AVFormatContext *format_ctx;
+    AVCodecContext *codec_ctx;
+    const AVCodec *codec;
+    AVFrame *frame;
+    AVPacket *packet;
+} IMAGE_READER_CONTEXT;
+
+static bool Image_Reader_Init(const char *path, IMAGE_READER_CONTEXT *ctx);
+static void Image_Reader_Free(IMAGE_READER_CONTEXT *ctx);
+static IMAGE *Image_Reader_ConstructImage(
+    IMAGE_READER_CONTEXT *ctx, int32_t target_width, int32_t target_height,
+    IMAGE_FIT_MODE fit_mode);
+static IMAGE_BLIT Image_GetBlit(
+    int32_t source_width, int32_t source_height, int32_t target_width,
+    int32_t target_height, IMAGE_FIT_MODE fit_mode);
+
+static bool Image_Reader_Init(
+    const char *const path, IMAGE_READER_CONTEXT *const ctx)
+{
+    assert(ctx != NULL);
+    ctx->format_ctx = NULL;
+    ctx->codec = NULL;
+    ctx->codec_ctx = NULL;
+    ctx->frame = NULL;
+    ctx->packet = NULL;
+
+    char *full_path = File_GetFullPath(path);
+    int32_t error_code =
+        avformat_open_input(&ctx->format_ctx, full_path, NULL, NULL);
+    Memory_FreePointer(&full_path);
+
+    if (error_code != 0) {
+        goto finish;
+    }
+
+#if 0
+    error_code = avformat_find_stream_info(format_ctx, NULL);
+    if (error_code < 0) {
+        goto finish;
+    }
+#endif
+
+    AVStream *video_stream = NULL;
+    for (unsigned int i = 0; i < ctx->format_ctx->nb_streams; i++) {
+        AVStream *current_stream = ctx->format_ctx->streams[i];
+        if (current_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            video_stream = current_stream;
+            break;
+        }
+    }
+    if (video_stream == NULL) {
+        error_code = AVERROR_STREAM_NOT_FOUND;
+        goto finish;
+    }
+
+    ctx->codec = avcodec_find_decoder(video_stream->codecpar->codec_id);
+    if (ctx->codec == NULL) {
+        error_code = AVERROR_DEMUXER_NOT_FOUND;
+        goto finish;
+    }
+
+    ctx->codec_ctx = avcodec_alloc_context3(ctx->codec);
+    if (ctx->codec_ctx == NULL) {
+        error_code = AVERROR(ENOMEM);
+        goto finish;
+    }
+
+    error_code =
+        avcodec_parameters_to_context(ctx->codec_ctx, video_stream->codecpar);
+    if (error_code) {
+        goto finish;
+    }
+
+#if 0
+    ctx->codec_ctx->thread_count = 0;
+    if (ctx->codec->capabilities & AV_CODEC_CAP_FRAME_THREADS)
+        ctx->codec_ctx->thread_type = FF_THREAD_FRAME;
+    else if (ctx->codec->capabilities & AV_CODEC_CAP_SLICE_THREADS)
+        ctx->codec_ctx->thread_type = FF_THREAD_SLICE;
+    else
+        ctx->codec_ctx->thread_count = 1; //don't use multithreading
+#endif
+
+    error_code = avcodec_open2(ctx->codec_ctx, ctx->codec, NULL);
+    if (error_code < 0) {
+        goto finish;
+    }
+
+    ctx->packet = av_packet_alloc();
+    av_new_packet(ctx->packet, 0);
+    error_code = av_read_frame(ctx->format_ctx, ctx->packet);
+    if (error_code < 0) {
+        goto finish;
+    }
+
+    error_code = avcodec_send_packet(ctx->codec_ctx, ctx->packet);
+    if (error_code < 0) {
+        goto finish;
+    }
+
+    ctx->frame = av_frame_alloc();
+    if (ctx->frame == NULL) {
+        error_code = AVERROR(ENOMEM);
+        goto finish;
+    }
+
+    error_code = avcodec_receive_frame(ctx->codec_ctx, ctx->frame);
+    if (error_code < 0) {
+        goto finish;
+    }
+    error_code = 0;
+
+finish:
+    if (error_code != 0) {
+        LOG_ERROR(
+            "Error while opening image %s: %s", path, av_err2str(error_code));
+        Image_Reader_Free(ctx);
+        return false;
+    }
+
+    return true;
+}
+
+static void Image_Reader_Free(IMAGE_READER_CONTEXT *const ctx)
+{
+    if (ctx->packet != NULL) {
+        av_packet_free(&ctx->packet);
+    }
+
+    if (ctx->frame != NULL) {
+        av_frame_free(&ctx->frame);
+    }
+
+    if (ctx->codec_ctx != NULL) {
+        avcodec_close(ctx->codec_ctx);
+        av_free(ctx->codec_ctx);
+        ctx->codec_ctx = NULL;
+    }
+
+    if (ctx->format_ctx != NULL) {
+        avformat_close_input(&ctx->format_ctx);
+    }
+}
+
 IMAGE *Image_Create(const int width, const int height)
 {
     IMAGE *image = Memory_Alloc(sizeof(IMAGE));
@@ -31,160 +186,162 @@ IMAGE *Image_Create(const int width, const int height)
     return image;
 }
 
-IMAGE *Image_CreateFromFile(const char *const path)
+static IMAGE *Image_Reader_ConstructImage(
+    IMAGE_READER_CONTEXT *const ctx, const int32_t target_width,
+    const int32_t target_height, IMAGE_FIT_MODE fit_mode)
 {
-    assert(path);
+    assert(ctx != NULL);
+    assert(target_width > 0);
+    assert(target_height > 0);
 
-    int error_code;
-    AVFormatContext *format_ctx = NULL;
-    const AVCodec *codec = NULL;
-    AVCodecContext *codec_ctx = NULL;
-    AVFrame *frame = NULL;
-    AVPacket *packet = NULL;
-    struct SwsContext *sws_ctx = NULL;
-    uint8_t *dst_data[4] = { 0 };
-    int dst_linesize[4] = { 0 };
-    IMAGE *target_image = NULL;
+    IMAGE_BLIT blit = Image_GetBlit(
+        ctx->frame->width, ctx->frame->height, target_width, target_height,
+        fit_mode);
 
-    char *full_path = File_GetFullPath(path);
-    error_code = avformat_open_input(&format_ctx, full_path, NULL, NULL);
-    Memory_FreePointer(&full_path);
-    if (error_code != 0) {
-        goto cleanup;
+    if (blit.src.y != 0 || blit.src.x != 0) {
+        ctx->frame->crop_top = blit.src.y;
+        ctx->frame->crop_left = blit.src.x;
+        av_frame_apply_cropping(ctx->frame, AV_FRAME_CROP_UNALIGNED);
     }
 
-    error_code = avformat_find_stream_info(format_ctx, NULL);
-    if (error_code < 0) {
-        goto cleanup;
-    }
-
-    AVStream *video_stream = NULL;
-    for (unsigned int i = 0; i < format_ctx->nb_streams; i++) {
-        AVStream *current_stream = format_ctx->streams[i];
-        if (current_stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-            video_stream = current_stream;
-            break;
-        }
-    }
-    if (!video_stream) {
-        error_code = AVERROR_STREAM_NOT_FOUND;
-        goto cleanup;
-    }
-
-    codec = avcodec_find_decoder(video_stream->codecpar->codec_id);
-    if (!codec) {
-        error_code = AVERROR_DEMUXER_NOT_FOUND;
-        goto cleanup;
-    }
-
-    codec_ctx = avcodec_alloc_context3(codec);
-    if (!codec_ctx) {
-        error_code = AVERROR(ENOMEM);
-        goto cleanup;
-    }
-
-    error_code =
-        avcodec_parameters_to_context(codec_ctx, video_stream->codecpar);
-    if (error_code) {
-        goto cleanup;
-    }
-
-    error_code = avcodec_open2(codec_ctx, codec, NULL);
-    if (error_code < 0) {
-        goto cleanup;
-    }
-
-    packet = av_packet_alloc();
-    av_new_packet(packet, 0);
-    error_code = av_read_frame(format_ctx, packet);
-    if (error_code < 0) {
-        goto cleanup;
-    }
-
-    error_code = avcodec_send_packet(codec_ctx, packet);
-    if (error_code < 0) {
-        goto cleanup;
-    }
-
-    frame = av_frame_alloc();
-    if (!frame) {
-        error_code = AVERROR(ENOMEM);
-        goto cleanup;
-    }
-
-    error_code = avcodec_receive_frame(codec_ctx, frame);
-    if (error_code < 0) {
-        goto cleanup;
-    }
-
-    target_image = Image_Create(frame->width, frame->height);
-
-    sws_ctx = sws_getContext(
-        codec_ctx->width, codec_ctx->height, codec_ctx->pix_fmt,
-        target_image->width, target_image->height, AV_PIX_FMT_RGB24,
-        SWS_BILINEAR, NULL, NULL, NULL);
-
-    if (!sws_ctx) {
+    struct SwsContext *const sws_ctx = sws_getContext(
+        blit.src.width, blit.src.height, ctx->frame->format, blit.dst.width,
+        blit.dst.height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+    if (sws_ctx == NULL) {
         LOG_ERROR("Failed to get SWS context");
-        error_code = AVERROR_EXTERNAL;
-        goto cleanup;
+        return NULL;
     }
 
-    error_code = av_image_alloc(
-        dst_data, dst_linesize, target_image->width, target_image->height,
-        AV_PIX_FMT_RGB24, 1);
-    if (error_code < 0) {
-        goto cleanup;
-    }
+    IMAGE *const target_image = Image_Create(target_width, target_height);
+
+    uint8_t *dst_planes[4] = { (uint8_t *)target_image->data
+                                   + (blit.dst.y * target_image->width
+                                      + blit.dst.x)
+                                       * sizeof(IMAGE_PIXEL),
+                               NULL, NULL, NULL };
+    int dst_linesize[4] = { target_image->width * sizeof(IMAGE_PIXEL), 0, 0,
+                            0 };
 
     sws_scale(
-        sws_ctx, (const uint8_t *const *)frame->data, frame->linesize, 0,
-        frame->height, dst_data, dst_linesize);
+        sws_ctx, (const uint8_t *const *)ctx->frame->data, ctx->frame->linesize,
+        0, blit.src.height, dst_planes, dst_linesize);
 
-    av_image_copy_to_buffer(
-        (uint8_t *)target_image->data,
-        target_image->width * target_image->height * sizeof(IMAGE_PIXEL),
-        (const uint8_t *const *)dst_data, dst_linesize, AV_PIX_FMT_RGB24,
-        target_image->width, target_image->height, 1);
+    sws_freeContext(sws_ctx);
+    return target_image;
+}
 
-    error_code = 0;
-    goto success;
+static IMAGE_BLIT Image_GetBlit(
+    const int32_t source_width, const int32_t source_height,
+    const int32_t target_width, const int32_t target_height,
+    IMAGE_FIT_MODE fit_mode)
+{
+    const float source_ratio = source_width / (float)source_height;
+    const float target_ratio = target_width / (float)target_height;
 
-cleanup:
-    if (target_image) {
-        Image_Free(target_image);
-        target_image = NULL;
+    if (fit_mode == IMAGE_FIT_SMART) {
+        const float ar_diff =
+            (source_ratio > target_ratio ? source_ratio / target_ratio
+                                         : target_ratio / source_ratio)
+            - 1.0f;
+        if (ar_diff <= 0.1f) {
+            // if the difference between aspect ratios is under 10%, just
+            // stretch it
+            fit_mode = IMAGE_FIT_STRETCH;
+        } else if (source_ratio <= target_ratio) {
+            // if the viewport is too wide, center the image
+            fit_mode = IMAGE_FIT_LETTERBOX;
+        } else {
+            // if the image is too wide, crop the image
+            fit_mode = IMAGE_FIT_CROP;
+        }
     }
 
-    if (error_code) {
-        LOG_ERROR(
-            "Error while opening image %s: %s", path, av_err2str(error_code));
+    IMAGE_BLIT blit;
+
+    switch (fit_mode) {
+    case IMAGE_FIT_STRETCH:
+        blit.src.width = source_width;
+        blit.src.height = source_height;
+        blit.src.x = 0;
+        blit.src.y = 0;
+
+        blit.dst.width = target_width;
+        blit.dst.height = target_height;
+        blit.dst.x = 0;
+        blit.dst.y = 0;
+        break;
+
+    case IMAGE_FIT_CROP:
+        blit.src.width = source_ratio < target_ratio
+            ? source_width
+            : source_height * target_ratio;
+        blit.src.height = source_ratio < target_ratio
+            ? source_width / target_ratio
+            : source_height;
+        blit.src.x = (source_width - blit.src.width) / 2;
+        blit.src.y = (source_height - blit.src.height) / 2;
+
+        blit.dst.width = target_width;
+        blit.dst.height = target_height;
+        blit.dst.x = 0;
+        blit.dst.y = 0;
+        break;
+
+    case IMAGE_FIT_LETTERBOX:
+        blit.src.width = source_width;
+        blit.src.height = source_height;
+        blit.src.x = 0;
+        blit.src.y = 0;
+
+        blit.dst.width = (source_ratio > target_ratio)
+            ? target_width
+            : target_height * source_ratio;
+        blit.dst.height = (source_ratio > target_ratio)
+            ? target_width / source_ratio
+            : target_height;
+        blit.dst.x = (target_width - blit.dst.width) / 2;
+        blit.dst.y = (target_height - blit.dst.height) / 2;
+        break;
+
+    default:
+        assert(false);
+        break;
+    }
+    return blit;
+}
+
+IMAGE *Image_CreateFromFile(const char *const path)
+{
+    assert(path != NULL);
+
+    IMAGE_READER_CONTEXT ctx;
+    if (!Image_Reader_Init(path, &ctx)) {
+        return NULL;
     }
 
-success:
-    av_freep(&dst_data[0]);
+    IMAGE *target_image = Image_Reader_ConstructImage(
+        &ctx, ctx.frame->width, ctx.frame->height, IMAGE_FIT_STRETCH);
 
-    if (sws_ctx) {
-        sws_freeContext(sws_ctx);
+    Image_Reader_Free(&ctx);
+
+    return target_image;
+}
+
+IMAGE *Image_CreateFromFileInto(
+    const char *const path, const int32_t target_width,
+    const int32_t target_height, const IMAGE_FIT_MODE fit_mode)
+{
+    assert(path != NULL);
+
+    IMAGE_READER_CONTEXT ctx;
+    if (!Image_Reader_Init(path, &ctx)) {
+        return NULL;
     }
 
-    if (packet) {
-        av_packet_free(&packet);
-    }
+    IMAGE *target_image = Image_Reader_ConstructImage(
+        &ctx, target_width, target_height, fit_mode);
 
-    if (frame) {
-        av_frame_free(&frame);
-    }
-
-    if (codec_ctx) {
-        avcodec_close(codec_ctx);
-        av_free(codec_ctx);
-        codec_ctx = NULL;
-    }
-
-    if (format_ctx) {
-        avformat_close_input(&format_ctx);
-    }
+    Image_Reader_Free(&ctx);
 
     return target_image;
 }
@@ -220,19 +377,19 @@ bool Image_SaveToFile(const IMAGE *const image, const char *const path)
     }
 
     fp = File_Open(path, FILE_OPEN_WRITE);
-    if (!fp) {
+    if (fp == NULL) {
         LOG_ERROR("Cannot create image file: %s", path);
         goto cleanup;
     }
 
     codec = avcodec_find_encoder(codec_id);
-    if (!codec) {
+    if (codec == NULL) {
         error_code = AVERROR_MUXER_NOT_FOUND;
         goto cleanup;
     }
 
     codec_ctx = avcodec_alloc_context3(codec);
-    if (!codec_ctx) {
+    if (codec_ctx == NULL) {
         error_code = AVERROR(ENOMEM);
         goto cleanup;
     }
@@ -255,7 +412,7 @@ bool Image_SaveToFile(const IMAGE *const image, const char *const path)
     }
 
     frame = av_frame_alloc();
-    if (!frame) {
+    if (frame == NULL) {
         error_code = AVERROR(ENOMEM);
         goto cleanup;
     }
@@ -278,7 +435,7 @@ bool Image_SaveToFile(const IMAGE *const image, const char *const path)
         image->width, image->height, source_pix_fmt, frame->width,
         frame->height, target_pix_fmt, SWS_BILINEAR, NULL, NULL, NULL);
 
-    if (!sws_ctx) {
+    if (sws_ctx == NULL) {
         LOG_ERROR("Failed to get SWS context");
         error_code = AVERROR_EXTERNAL;
         goto cleanup;
@@ -291,7 +448,7 @@ bool Image_SaveToFile(const IMAGE *const image, const char *const path)
         image->width, image->height, 1);
 
     sws_scale(
-        sws_ctx, (const uint8_t *const *)src_planes, src_linesize, 0,
+        sws_ctx, (const uint8_t *const *)frame->data, frame->linesize, 0,
         image->height, frame->data, frame->linesize);
 
     error_code = avcodec_send_frame(codec_ctx, frame);
@@ -348,195 +505,51 @@ cleanup:
     return result;
 }
 
-IMAGE *Image_ScaleLetterbox(
-    const IMAGE *const source_image, size_t target_width, size_t target_height)
+IMAGE *Image_Scale(
+    const IMAGE *const source_image, size_t target_width, size_t target_height,
+    IMAGE_FIT_MODE fit_mode)
 {
     assert(source_image);
     assert(source_image->data);
+    assert(target_width > 0);
+    assert(target_height > 0);
 
-    IMAGE *target_image = NULL;
-    int source_width = source_image->width;
-    int source_height = source_image->height;
+    IMAGE_BLIT blit = Image_GetBlit(
+        source_image->width, source_image->height, target_width, target_height,
+        fit_mode);
 
-    const float source_ratio = source_width / (float)source_height;
-    const float target_ratio = target_width / (float)target_height;
-    {
-        int new_width = source_ratio < target_ratio
-            ? target_height * source_ratio
-            : target_width;
-        int new_height = source_ratio < target_ratio
-            ? target_height
-            : target_width / source_ratio;
-        target_width = new_width;
-        target_height = new_height;
-    }
-
-    struct SwsContext *sws_ctx = sws_getContext(
-        source_width, source_height, AV_PIX_FMT_RGB24, target_width,
-        target_height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
-
-    if (!sws_ctx) {
+    struct SwsContext *const sws_ctx = sws_getContext(
+        blit.src.width, blit.src.height, AV_PIX_FMT_RGB24, blit.dst.width,
+        blit.dst.height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+    if (sws_ctx == NULL) {
         LOG_ERROR("Failed to get SWS context");
-        goto cleanup;
+        return NULL;
     }
 
-    target_image = Image_Create(target_width, target_height);
+    IMAGE *const target_image = Image_Create(target_width, target_height);
 
-    uint8_t *src_planes[4];
-    uint8_t *dst_planes[4];
-    int src_linesize[4];
-    int dst_linesize[4];
+    uint8_t *src_planes[4] = { (uint8_t *)source_image->data
+                                   + (blit.src.y * source_image->width
+                                      + blit.src.x)
+                                       * sizeof(IMAGE_PIXEL),
+                               NULL, NULL, NULL };
+    int src_linesize[4] = { source_image->width * sizeof(IMAGE_PIXEL), 0, 0,
+                            0 };
 
-    av_image_fill_arrays(
-        src_planes, src_linesize, (const uint8_t *)source_image->data,
-        AV_PIX_FMT_RGB24, source_width, source_height, 1);
-
-    av_image_fill_arrays(
-        dst_planes, dst_linesize, (const uint8_t *)target_image->data,
-        AV_PIX_FMT_RGB24, target_image->width, target_image->height, 1);
+    uint8_t *dst_planes[4] = { (uint8_t *)target_image->data
+                                   + (blit.dst.y * target_image->width
+                                      + blit.dst.x)
+                                       * sizeof(IMAGE_PIXEL),
+                               NULL, NULL, NULL };
+    int dst_linesize[4] = { target_image->width * sizeof(IMAGE_PIXEL), 0, 0,
+                            0 };
 
     sws_scale(
         sws_ctx, (const uint8_t *const *)src_planes, src_linesize, 0,
-        source_height, (uint8_t *const *)dst_planes, dst_linesize);
+        blit.src.height, (uint8_t *const *)dst_planes, dst_linesize);
 
-cleanup:
-    if (sws_ctx) {
-        sws_freeContext(sws_ctx);
-    }
-
+    sws_freeContext(sws_ctx);
     return target_image;
-}
-
-IMAGE *Image_ScaleCrop(
-    const IMAGE *const source_image, const size_t target_width,
-    const size_t target_height)
-{
-    assert(source_image);
-    assert(source_image->data);
-
-    IMAGE *target_image = NULL;
-    int source_width = source_image->width;
-    int source_height = source_image->height;
-
-    const float source_ratio = source_width / (float)source_height;
-    const float target_ratio = target_width / (float)target_height;
-
-    int crop_width = source_ratio < target_ratio ? source_width
-                                                 : source_height * target_ratio;
-    int crop_height = source_ratio < target_ratio ? source_width / target_ratio
-                                                  : source_height;
-
-    struct SwsContext *sws_ctx = sws_getContext(
-        crop_width, crop_height, AV_PIX_FMT_RGB24, target_width, target_height,
-        AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
-
-    if (!sws_ctx) {
-        LOG_ERROR("Failed to get SWS context");
-        goto cleanup;
-    }
-
-    target_image = Image_Create(target_width, target_height);
-
-    uint8_t *src_planes[4];
-    uint8_t *dst_planes[4];
-    int src_linesize[4];
-    int dst_linesize[4];
-
-    av_image_fill_arrays(
-        src_planes, src_linesize, (const uint8_t *)source_image->data,
-        AV_PIX_FMT_RGB24, source_width, source_height, 1);
-
-    src_planes[0] += ((source_height - crop_height) / 2) * src_linesize[0];
-    src_planes[0] += ((source_width - crop_width) / 2) * sizeof(IMAGE_PIXEL);
-
-    av_image_fill_arrays(
-        dst_planes, dst_linesize, (const uint8_t *)target_image->data,
-        AV_PIX_FMT_RGB24, target_image->width, target_image->height, 1);
-
-    sws_scale(
-        sws_ctx, (const uint8_t *const *)src_planes, src_linesize, 0,
-        crop_height, (uint8_t *const *)dst_planes, dst_linesize);
-
-cleanup:
-    if (sws_ctx) {
-        sws_freeContext(sws_ctx);
-    }
-
-    return target_image;
-}
-
-IMAGE *Image_ScaleStretch(
-    const IMAGE *const source_image, const size_t target_width,
-    const size_t target_height)
-{
-    assert(source_image);
-    assert(source_image->data);
-
-    IMAGE *target_image = NULL;
-    int source_width = source_image->width;
-    int source_height = source_image->height;
-
-    struct SwsContext *sws_ctx = sws_getContext(
-        source_width, source_height, AV_PIX_FMT_RGB24, target_width,
-        target_height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
-
-    if (!sws_ctx) {
-        LOG_ERROR("Failed to get SWS context");
-        goto cleanup;
-    }
-
-    target_image = Image_Create(target_width, target_height);
-
-    uint8_t *src_planes[4];
-    uint8_t *dst_planes[4];
-    int src_linesize[4];
-    int dst_linesize[4];
-
-    av_image_fill_arrays(
-        src_planes, src_linesize, (const uint8_t *)source_image->data,
-        AV_PIX_FMT_RGB24, source_width, source_height, 1);
-
-    av_image_fill_arrays(
-        dst_planes, dst_linesize, (const uint8_t *)target_image->data,
-        AV_PIX_FMT_RGB24, target_image->width, target_image->height, 1);
-
-    sws_scale(
-        sws_ctx, (const uint8_t *const *)src_planes, src_linesize, 0,
-        source_height, (uint8_t *const *)dst_planes, dst_linesize);
-
-cleanup:
-    if (sws_ctx) {
-        sws_freeContext(sws_ctx);
-    }
-
-    return target_image;
-}
-
-IMAGE *Image_ScaleSmart(
-    const IMAGE *const source_image, const size_t target_width,
-    const size_t target_height)
-{
-    assert(source_image);
-    const float source_ratio =
-        source_image->width / (float)source_image->height;
-    const float target_ratio = target_width / (float)target_height;
-
-    // if the difference between aspect ratios is under 10%, just stretch it
-    const float ar_diff =
-        (source_ratio > target_ratio ? source_ratio / target_ratio
-                                     : target_ratio / source_ratio)
-        - 1.0f;
-    if (ar_diff <= 0.1f) {
-        return Image_ScaleStretch(source_image, target_width, target_height);
-    }
-
-    // if the viewport is too wide, center the image
-    if (source_ratio <= target_ratio) {
-        return Image_ScaleLetterbox(source_image, target_width, target_height);
-    }
-
-    // if the image is too wide, crop the image
-    return Image_ScaleCrop(source_image, target_width, target_height);
 }
 
 void Image_Free(IMAGE *image)

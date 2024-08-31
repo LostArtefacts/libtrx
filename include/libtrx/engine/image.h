@@ -16,20 +16,27 @@ typedef struct {
     IMAGE_PIXEL *data;
 } IMAGE;
 
+typedef enum {
+    IMAGE_FIT_STRETCH,
+    IMAGE_FIT_CROP,
+    IMAGE_FIT_LETTERBOX,
+    IMAGE_FIT_SMART,
+} IMAGE_FIT_MODE;
+
 IMAGE *Image_Create(int width, int height);
+
 IMAGE *Image_CreateFromFile(const char *path);
+
+IMAGE *Image_CreateFromFileInto(
+    const char *path, int32_t target_width, int32_t target_height,
+    IMAGE_FIT_MODE fit_mode);
+
 void Image_Free(IMAGE *image);
+
+bool Image_GetFileInfo(const char *path, int32_t *width, int32_t *height);
 
 bool Image_SaveToFile(const IMAGE *image, const char *path);
 
-IMAGE *Image_ScaleFit(
-    const IMAGE *source_image, size_t target_width, size_t target_height);
-
-IMAGE *Image_ScaleCover(
-    const IMAGE *source_image, size_t target_width, size_t target_height);
-
-IMAGE *Image_ScaleStretch(
-    const IMAGE *source_image, size_t target_width, size_t target_height);
-
-IMAGE *Image_ScaleSmart(
-    const IMAGE *source_image, size_t target_width, size_t target_height);
+IMAGE *Image_Scale(
+    const IMAGE *source_image, size_t target_width, size_t target_height,
+    IMAGE_FIT_MODE fit_mode);
