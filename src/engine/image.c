@@ -361,15 +361,15 @@ bool Image_SaveToFile(const IMAGE *const image, const char *const path)
     struct SwsContext *sws_ctx = NULL;
     MYFILE *fp = NULL;
 
-    enum AVPixelFormat source_pix_fmt = AV_PIX_FMT_RGB24;
-    enum AVPixelFormat target_pix_fmt;
+    enum AVPixelFormat src_pix_fmt = AV_PIX_FMT_RGB24;
+    enum AVPixelFormat dst_pix_fmt;
     enum AVCodecID codec_id;
 
     if (strstr(path, ".jpg")) {
-        target_pix_fmt = AV_PIX_FMT_YUVJ420P;
+        dst_pix_fmt = AV_PIX_FMT_YUVJ420P;
         codec_id = AV_CODEC_ID_MJPEG;
     } else if (strstr(path, ".png")) {
-        target_pix_fmt = AV_PIX_FMT_RGB24;
+        dst_pix_fmt = AV_PIX_FMT_RGB24;
         codec_id = AV_CODEC_ID_PNG;
     } else {
         LOG_ERROR("Cannot determine image format based on path '%s'", path);
@@ -398,7 +398,7 @@ bool Image_SaveToFile(const IMAGE *const image, const char *const path)
     codec_ctx->width = image->width;
     codec_ctx->height = image->height;
     codec_ctx->time_base = (AVRational) { 1, 25 };
-    codec_ctx->pix_fmt = target_pix_fmt;
+    codec_ctx->pix_fmt = dst_pix_fmt;
 
     if (codec_id == AV_CODEC_ID_MJPEG) {
         // 9 JPEG quality
@@ -432,8 +432,8 @@ bool Image_SaveToFile(const IMAGE *const image, const char *const path)
     av_new_packet(packet, 0);
 
     sws_ctx = sws_getContext(
-        image->width, image->height, source_pix_fmt, frame->width,
-        frame->height, target_pix_fmt, SWS_BILINEAR, NULL, NULL, NULL);
+        image->width, image->height, src_pix_fmt, frame->width, frame->height,
+        dst_pix_fmt, SWS_BILINEAR, NULL, NULL, NULL);
 
     if (sws_ctx == NULL) {
         LOG_ERROR("Failed to get SWS context");
@@ -444,11 +444,11 @@ bool Image_SaveToFile(const IMAGE *const image, const char *const path)
     uint8_t *src_planes[4];
     int src_linesize[4];
     av_image_fill_arrays(
-        src_planes, src_linesize, (const uint8_t *)image->data, source_pix_fmt,
+        src_planes, src_linesize, (const uint8_t *)image->data, src_pix_fmt,
         image->width, image->height, 1);
 
     sws_scale(
-        sws_ctx, (const uint8_t *const *)frame->data, frame->linesize, 0,
+        sws_ctx, (const uint8_t *const *)src_planes, src_linesize, 0,
         image->height, frame->data, frame->linesize);
 
     error_code = avcodec_send_frame(codec_ctx, frame);
