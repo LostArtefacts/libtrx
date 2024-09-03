@@ -51,6 +51,7 @@ sources = [
   'src/engine/audio_sample.c',
   'src/engine/audio_stream.c',
   'src/engine/image.c',
+  'src/enum_str.c',
   'src/filesystem.c',
   'src/json/bson_parse.c',
   'src/json/bson_write.c',

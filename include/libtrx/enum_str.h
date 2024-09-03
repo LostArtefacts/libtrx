@@ -15,3 +15,9 @@ typedef struct {
     #define DECLARE_ENUM_STRING_MAP(type, ...)                                 \
         extern const ENUM_STRING_MAP g_EnumStr_##type[];
 #endif
+
+#define ENUM_STRING_GET(type, key, default_value)                              \
+    EnumStr_GetImpl(ENUM_STRING_MAP(type), (key), (default_value))
+
+int EnumStr_GetImpl(
+    const ENUM_STRING_MAP *enum_map, const char *key, int default_value);
