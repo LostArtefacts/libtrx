@@ -5,6 +5,7 @@ typedef struct {
     int value;
 } ENUM_STRING_MAP;
 
+#define ENUM_SELF(type) { #type, type }
 #define ENUM_STRING_MAP(type) g_EnumStr_##type
 
 #ifdef ENUM_STR_IMPL
