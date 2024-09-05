@@ -19,7 +19,7 @@ public class MainWindowViewModel : BaseLanguageViewModel
         _configuration = new();
 
         List<CategoryViewModel> categories = new();
-        foreach (Category category in _configuration.Categories)
+        foreach (Category category in _configuration.Categories.Where(c => c.Properties.Count > 0))
         {
             categories.Add(new(category));
             category.Properties
