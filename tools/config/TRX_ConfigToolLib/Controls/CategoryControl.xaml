@@ -12,7 +12,7 @@
     <UserControl.Resources>
         <ResourceDictionary Source="/TRX_ConfigToolLib;component/Resources/styles.xaml" />
     </UserControl.Resources>
-    
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>

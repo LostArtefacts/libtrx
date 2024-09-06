@@ -14,7 +14,7 @@
     <Window.Resources>
         <ResourceDictionary Source="/TRX_ConfigToolLib;component/Resources/styles.xaml" />
     </Window.Resources>
-    
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>

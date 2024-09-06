@@ -16,7 +16,7 @@
     Height="575"
     MinWidth="620"
     MinHeight="355">
-    
+
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -36,7 +36,7 @@
                         TrueValue="Visible"/>
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>        
+        </ResourceDictionary>
     </Window.Resources>
 
     <Window.InputBindings>

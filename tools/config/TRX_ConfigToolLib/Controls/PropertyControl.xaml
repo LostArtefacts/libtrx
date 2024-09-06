@@ -13,7 +13,7 @@
     <UserControl.Resources>
         <ResourceDictionary Source="/TRX_ConfigToolLib;component/Resources/styles.xaml" />
     </UserControl.Resources>
-    
+
     <StackPanel>
         <TextBlock
             Text="{Binding Title}"
