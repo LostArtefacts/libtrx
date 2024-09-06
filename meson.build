@@ -8,6 +8,8 @@ project(
 )
 
 fs = import('fs')
+staticdeps = get_option('staticdeps')
+tr_version = get_option('tr_version')
 
 c_compiler = meson.get_compiler('c')
 relative_dir = fs.relative_to(meson.current_source_dir(), meson.global_build_root())
@@ -18,10 +20,10 @@ build_opts = [
   '-DDWST_STATIC',
   '-DPCRE2_STATIC',
   '-DPCRE2_CODE_UNIT_WIDTH=8',
+  '-DTR_VERSION=' + tr_version.to_string(),
 ]
+set_variable('defines', ['-DTR_VERSION=' + tr_version.to_string()])
 add_project_arguments(build_opts, language: 'c')
-
-staticdeps = get_option('staticdeps')
 
 # Always dynamically link on macOS
 if host_machine.system() == 'darwin'
@@ -52,6 +54,7 @@ sources = [
   'src/engine/audio_stream.c',
   'src/engine/image.c',
   'src/enum_str.c',
+  'src/game/items.c',
   'src/filesystem.c',
   'src/json/bson_parse.c',
   'src/json/bson_write.c',
