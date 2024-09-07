@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import json
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -45,10 +46,21 @@ def lint_trailing_whitespace(path: Path) -> Iterable[LintWarning]:
             yield LintWarning(path, "trailing whitespace", line=i)
 
 
+def lint_const_primitives(path: Path) -> Iterable[LintWarning]:
+    if path.suffix != ".h":
+        return
+    for i, line in enumerate(path.open("r"), 1):
+        if re.search(r"const (int[a-z0-9_]*|bool)\b\s*[a-z]", line):
+            yield LintWarning(path, "useless const", line=i)
+        if re.search(r"\*\s*const", line):
+            yield LintWarning(path, "useless const", line=i)
+
+
 ALL_LINTERS: list[Callable[[], Iterable[LintWarning]]] = [
     lint_json_validity,
     lint_newlines,
     lint_trailing_whitespace,
+    lint_const_primitives,
 ]
 
 
