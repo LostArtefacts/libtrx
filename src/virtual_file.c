@@ -53,6 +53,12 @@ size_t VFile_GetPos(const VFILE *file)
     return file->cur_ptr - file->content;
 }
 
+void VFile_SetPos(VFILE *const file, const size_t pos)
+{
+    assert(pos <= file->size);
+    file->cur_ptr = file->content + pos;
+}
+
 void VFile_Skip(VFILE *file, int32_t offset)
 {
     const size_t cur_pos = VFile_GetPos(file);
