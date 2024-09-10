@@ -14,6 +14,7 @@ VFILE *VFile_CreateFromBuffer(const char *data, size_t size);
 void VFile_Close(VFILE *file);
 
 size_t VFile_GetPos(const VFILE *file);
+void VFile_SetPos(VFILE *file, size_t pos);
 void VFile_Skip(VFILE *file, int32_t offset);
 
 void VFile_Read(VFILE *file, void *target, size_t size);
