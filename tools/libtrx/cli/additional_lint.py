@@ -2,6 +2,7 @@
 import argparse
 import sys
 from collections.abc import Iterable
+from fnmatch import fnmatch
 from pathlib import Path
 
 from libtrx.files import find_versioned_files, is_binary_file
@@ -16,14 +17,16 @@ def parse_args() -> argparse.Namespace:
 
 
 def filter_files(
-    files: Iterable[Path], ignored_extensions: list[str] | None, debug: bool
+    files: Iterable[Path], ignored_patterns: list[str] | None, debug: bool
 ) -> Iterable[Path]:
     for path in files:
         if is_binary_file(path):
             if debug:
                 print(f"{path} is a binary file, ignoring", file=sys.stderr)
             continue
-        if ignored_extensions and path.suffix in ignored_extensions:
+        if ignored_patterns and any(
+            fnmatch(path.name, pattern) for pattern in ignored_patterns
+        ):
             if debug:
                 print(
                     f"{path} has a prohibited extension, ignoring",
@@ -34,7 +37,7 @@ def filter_files(
 
 
 def run_script(
-    root_dir: Path | None = None, ignored_extensions: list[str] | None = None
+    root_dir: Path | None = None, ignored_patterns: list[str] | None = None
 ) -> None:
     args = parse_args()
     if args.path:
@@ -42,7 +45,7 @@ def run_script(
     else:
         files = find_versioned_files(root_dir=root_dir)
 
-    files = filter_files(files, ignored_extensions, debug=args.debug)
+    files = filter_files(files, ignored_patterns, debug=args.debug)
 
     exit_code = 0
     for file in files:
