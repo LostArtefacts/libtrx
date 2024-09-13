@@ -156,13 +156,13 @@ struct json_object_s *json_object_get_object(
     struct json_object_s *obj, const char *key);
 
 // values
-struct json_string_s *json_value_as_string(struct json_value_s *const value);
-struct json_number_s *json_value_as_number(struct json_value_s *const value);
-struct json_object_s *json_value_as_object(struct json_value_s *const value);
-struct json_array_s *json_value_as_array(struct json_value_s *const value);
-int json_value_is_true(const struct json_value_s *const value);
-int json_value_is_false(const struct json_value_s *const value);
-int json_value_is_null(const struct json_value_s *const value);
+struct json_string_s *json_value_as_string(struct json_value_s *value);
+struct json_number_s *json_value_as_number(struct json_value_s *value);
+struct json_object_s *json_value_as_object(struct json_value_s *value);
+struct json_array_s *json_value_as_array(struct json_value_s *value);
+int json_value_is_true(const struct json_value_s *value);
+int json_value_is_false(const struct json_value_s *value);
+int json_value_is_null(const struct json_value_s *value);
 
 struct json_value_s *json_value_from_bool(int b);
 struct json_value_s *json_value_from_number(struct json_number_s *num);
