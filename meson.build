@@ -10,6 +10,7 @@ project(
 fs = import('fs')
 staticdeps = get_option('staticdeps')
 tr_version = get_option('tr_version')
+gfx_gl_default_backend = get_option('gfx_gl_default_backend')
 
 c_compiler = meson.get_compiler('c')
 relative_dir = fs.relative_to(meson.current_source_dir(), meson.global_build_root())
@@ -21,8 +22,10 @@ build_opts = [
   '-DPCRE2_STATIC',
   '-DPCRE2_CODE_UNIT_WIDTH=8',
   '-DTR_VERSION=' + tr_version.to_string(),
+  '-DGFX_GL_DEFAULT_BACKEND=' + gfx_gl_default_backend,
 ]
 set_variable('defines', ['-DTR_VERSION=' + tr_version.to_string()])
+
 add_project_arguments(build_opts, language: 'c')
 
 # Always dynamically link on macOS
@@ -54,8 +57,23 @@ sources = [
   'src/engine/audio_stream.c',
   'src/engine/image.c',
   'src/enum_str.c',
-  'src/game/items.c',
   'src/filesystem.c',
+  'src/game/items.c',
+  'src/gfx/2d/2d_renderer.c',
+  'src/gfx/2d/2d_surface.c',
+  'src/gfx/3d/3d_renderer.c',
+  'src/gfx/3d/vertex_stream.c',
+  'src/gfx/context.c',
+  'src/gfx/gl/buffer.c',
+  'src/gfx/gl/gl_core_3_3.c',
+  'src/gfx/gl/program.c',
+  'src/gfx/gl/sampler.c',
+  'src/gfx/gl/texture.c',
+  'src/gfx/gl/utils.c',
+  'src/gfx/gl/vertex_array.c',
+  'src/gfx/renderers/fbo_renderer.c',
+  'src/gfx/renderers/legacy_renderer.c',
+  'src/gfx/screenshot.c',
   'src/json/bson_parse.c',
   'src/json/bson_write.c',
   'src/json/json_base.c',

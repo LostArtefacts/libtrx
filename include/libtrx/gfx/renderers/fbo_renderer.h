@@ -1,0 +1,5 @@
+#pragma once
+
+#include "../renderer.h"
+
+extern GFX_Renderer g_GFX_Renderer_FBO;
