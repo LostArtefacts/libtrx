@@ -4,6 +4,7 @@
 
 #include <ctype.h>
 #include <pcre2.h>
+#include <stdio.h>
 #include <string.h>
 
 bool String_EndsWith(const char *str, const char *suffix)
@@ -123,18 +124,7 @@ bool String_ParseBool(const char *const value, bool *const target)
 
 bool String_ParseInteger(const char *const value, int32_t *const target)
 {
-    for (size_t i = 0; i < strlen(value); i++) {
-        if (i == 0 && value[i] == '-') {
-            continue;
-        }
-        if (!isdigit(value[i])) {
-            return false;
-        }
-    }
-    if (target != NULL) {
-        *target = atoi(value);
-    }
-    return true;
+    return sscanf(value, "%d", target) == 1;
 }
 
 bool String_ParseDecimal(const char *const value, float *const target)
