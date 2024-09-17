@@ -44,9 +44,14 @@ dep_swscale = dependency('libswscale', static: staticdeps)
 dep_swresample = dependency('libswresample', static: staticdeps)
 
 dep_zlib = null_dep
-
 if not staticdeps
   dep_zlib = dependency('zlib', static: staticdeps)
+endif
+
+if host_machine.system() == 'windows'
+  dep_opengl = c_compiler.find_library('opengl32')
+else
+  dep_opengl = dependency('GL')
 endif
 
 sources = [
@@ -96,6 +101,7 @@ dependencies = [
   dep_swresample,
   dep_swscale,
   dep_zlib,
+  dep_opengl,
 ]
 
 if dep_backtrace.found() and host_machine.system() == 'linux'
