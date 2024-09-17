@@ -8,44 +8,6 @@ from subprocess import run
 from libtrx.files import find_versioned_files
 
 
-@functools.cache
-def get_fix_includes_exe_name() -> str:
-    return "fix_include" if which("fix_include") else "iwyu-fix-includes"
-
-
-def fix_imports(
-    path: Path,
-    root_dir: Path,
-    include_dirs: list[Path] | None = None,
-    system_include_dirs: list[Path] | None = None,
-) -> None:
-    cmdline = [
-        "include-what-you-use",
-    ]
-
-    if include_dirs:
-        for include_dir in include_dirs:
-            if include_dir != root_dir:
-                cmdline.extend(["-I", str(include_dir)])
-
-    if system_include_dirs:
-        for include_dir in system_include_dirs:
-            cmdline.extend(
-                [
-                    "-isystem",
-                    str(include_dir),
-                ]
-            )
-
-    cmdline.append(path)
-    iwyu_result = run(
-        cmdline, cwd=root_dir, capture_output=True, text=True
-    ).stderr
-
-    cmdline = [get_fix_includes_exe_name(), "--noblank_lines", "--noreorder"]
-    run(cmdline, cwd=root_dir, input=iwyu_result, text=True)
-
-
 def custom_sort(source: list[str], forced_order: list[str]) -> list[str]:
     def key_func(item: str) -> tuple[int, int, str]:
         if item in forced_order:
@@ -138,13 +100,6 @@ def run_script(
         )
 
     for path in paths:
-        fix_imports(
-            path,
-            root_dir=root_dir,
-            include_dirs=include_dirs,
-            system_include_dirs=system_include_dirs,
-        )
-
         sort_imports(
             path,
             root_dir=root_dir,
