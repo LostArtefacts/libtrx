@@ -1,7 +1,7 @@
 #pragma once
 
 #include "math.h"
-#include "objects.h"
+#include "objects/ids.h"
 
 #include <stdbool.h>
 #include <stdint.h>

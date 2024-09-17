@@ -65,6 +65,7 @@ sources = [
   'src/engine/image.c',
   'src/enum_str.c',
   'src/filesystem.c',
+  'src/game/console/commands/pos.c',
   'src/game/items.c',
   'src/game/game_string.c',
   'src/gfx/2d/2d_renderer.c',
