@@ -45,9 +45,10 @@ class CompileCommand(BaseCommand):
     def run(self, args: argparse.Namespace, options: Options) -> None:
         pkg_config_path = os.environ.get("PKG_CONFIG_PATH")
 
-        if not Path("/app/build/linux/build.jinja").exists():
+        if not (options.build_root / "build.ninja").exists():
             command = [
                 "meson",
+                "setup",
                 "--buildtype",
                 options.target,
                 *options.compile_args,
