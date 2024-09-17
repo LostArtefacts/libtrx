@@ -68,7 +68,7 @@ const char *String_CaseSubstring(const char *subject, const char *pattern)
     return NULL;
 }
 
-int32_t String_Match(const char *const subject, const char *const pattern)
+bool String_Match(const char *const subject, const char *const pattern)
 {
     if (subject == NULL || pattern == NULL) {
         return 0;
@@ -76,36 +76,30 @@ int32_t String_Match(const char *const subject, const char *const pattern)
 
     const unsigned char *const usubject = (const unsigned char *)subject;
     const unsigned char *const upattern = (const unsigned char *)pattern;
-    size_t pattern_size = strlen(pattern);
-    size_t subject_size = strlen(subject);
-    uint32_t options = PCRE2_CASELESS;
+    const uint32_t options = PCRE2_CASELESS;
 
-    pcre2_match_data *match_data;
-    uint32_t ovecsize = 128;
+    const uint32_t ovec_size = 128;
 
-    int errcode;
-    PCRE2_SIZE erroffset;
-    pcre2_code *re = pcre2_compile(
-        upattern, pattern_size, options, &errcode, &erroffset, NULL);
+    int err_code;
+    PCRE2_SIZE err_offset;
+    pcre2_code *const re = pcre2_compile(
+        upattern, PCRE2_ZERO_TERMINATED, options, &err_code, &err_offset, NULL);
     if (re == NULL) {
         PCRE2_UCHAR8 buffer[128];
-        pcre2_get_error_message(errcode, buffer, 120);
-        LOG_ERROR("%d\t%s", errcode, buffer);
+        pcre2_get_error_message(err_code, buffer, 120);
+        LOG_ERROR("%d\t%s", err_code, buffer);
         return false;
     }
 
-    match_data = pcre2_match_data_create(ovecsize, NULL);
-    const int rc =
-        pcre2_match(re, usubject, subject_size, 0, options, match_data, NULL);
-    PCRE2_SIZE match_length = 0;
-    if (rc > 0) {
-        PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(match_data);
-        match_length = ovector[1] - ovector[0];
-    }
+    pcre2_match_data *const match_data =
+        pcre2_match_data_create(ovec_size, NULL);
+    const int rc = pcre2_match(
+        re, usubject, PCRE2_ZERO_TERMINATED, 0,
+        PCRE2_ANCHORED | PCRE2_ENDANCHORED, match_data, NULL);
     pcre2_match_data_free(match_data);
     pcre2_code_free(re);
 
-    return match_length;
+    return rc > 0;
 }
 
 bool String_ParseBool(const char *const value, bool *const target)
