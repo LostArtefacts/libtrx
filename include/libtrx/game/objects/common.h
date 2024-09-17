@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ids.h"
-#include "../math.h"
-#include "../items.h"
 #include "../collision.h"
+#include "../items.h"
+#include "../math.h"
+#include "ids.h"
 
 #include <stdint.h>
 

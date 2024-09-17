@@ -1,11 +1,11 @@
 #pragma once
 
-#include "2d_surface.h"
 #include "../gl/buffer.h"
 #include "../gl/program.h"
 #include "../gl/sampler.h"
 #include "../gl/texture.h"
 #include "../gl/vertex_array.h"
+#include "2d_surface.h"
 
 #include <stdbool.h>
 #include <stdint.h>

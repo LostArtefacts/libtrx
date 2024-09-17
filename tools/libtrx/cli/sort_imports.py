@@ -23,9 +23,21 @@ def sort_imports(
     own_include_map: dict[str, str],
     fix_map: dict[str, str],
     forced_order: list[str],
+    include_dirs: list[Path],
 ) -> None:
     source = path.read_text()
-    rel_path = path.relative_to(root_dir)
+    try:
+        rel_path = path.relative_to(root_dir)
+    except ValueError:
+        matches = []
+        for include_dir in include_dirs:
+            try:
+                rel_path = path.relative_to(include_dir)
+            except ValueError:
+                pass
+            matches.append(rel_path)
+        rel_path = sorted(matches, key=lambda path: len(str(path)))[0]
+
     own_include = str(rel_path.with_suffix(".h"))
     own_include = own_include_map.get(str(rel_path), own_include)
 
@@ -106,4 +118,5 @@ def run_script(
             own_include_map=own_include_map,
             fix_map=fix_map,
             forced_order=forced_order,
+            include_dirs=include_dirs,
         )
