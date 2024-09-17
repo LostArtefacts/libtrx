@@ -7,11 +7,11 @@ project(
   ],
 )
 
-fs = import('fs')
 staticdeps = get_option('staticdeps')
 tr_version = get_option('tr_version')
 gfx_gl_default_backend = get_option('gfx_gl_default_backend')
 
+fs = import('fs')
 c_compiler = meson.get_compiler('c')
 relative_dir = fs.relative_to(meson.current_source_dir(), meson.global_build_root())
 build_opts = [
@@ -32,6 +32,8 @@ add_project_arguments(build_opts, language: 'c')
 if host_machine.system() == 'darwin'
   staticdeps = false
 endif
+
+uthash = subproject('uthash', default_options: ['warning_level=0'])
 
 null_dep = dependency('', required: false)
 dep_avcodec = dependency('libavcodec', static: staticdeps)
@@ -64,6 +66,7 @@ sources = [
   'src/enum_str.c',
   'src/filesystem.c',
   'src/game/items.c',
+  'src/game/game_string.c',
   'src/gfx/2d/2d_renderer.c',
   'src/gfx/2d/2d_surface.c',
   'src/gfx/3d/3d_renderer.c',
@@ -102,6 +105,7 @@ dependencies = [
   dep_swscale,
   dep_zlib,
   dep_opengl,
+  uthash.get_variable('uthash_dep'),
 ]
 
 if dep_backtrace.found() and host_machine.system() == 'linux'
