@@ -6,6 +6,7 @@
 #include "game/lara/common.h"
 #include "game/objects/common.h"
 #include "strings.h"
+#include "utils.h"
 
 static COMMAND_RESULT Console_Cmd_SetHealth(const char *args);
 
@@ -25,6 +26,7 @@ static COMMAND_RESULT Console_Cmd_SetHealth(const char *const args)
     if (!String_ParseInteger(args, &hp)) {
         return CR_BAD_INVOCATION;
     }
+    CLAMP(hp, 0, LARA_MAX_HITPOINTS);
 
     lara_item->hit_points = hp;
     Console_Log(GS(OSD_CURRENT_HEALTH_SET), hp);
