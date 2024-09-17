@@ -103,6 +103,11 @@ bool String_Match(const char *const subject, const char *const pattern)
     return rc > 0;
 }
 
+bool String_IsEmpty(const char *const value)
+{
+    return String_Match(value, "^\\s*$");
+}
+
 bool String_ParseBool(const char *const value, bool *const target)
 {
     if (String_Match(value, "0|false|off")) {
