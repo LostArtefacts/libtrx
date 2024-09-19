@@ -101,3 +101,6 @@ OBJECT_INFO;
 #endif
 
 OBJECT_INFO *Object_GetObject(GAME_OBJECT_ID object_id);
+
+bool Object_IsObjectType(
+    GAME_OBJECT_ID object_id, const GAME_OBJECT_ID *test_arr);
