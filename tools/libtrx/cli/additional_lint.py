@@ -6,7 +6,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 
 from libtrx.files import find_versioned_files, is_binary_file
-from libtrx.linting import lint_file
+from libtrx.linting import LintContext, lint_bulk_files, lint_file
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,22 +37,32 @@ def filter_files(
 
 
 def run_script(
-    root_dir: Path | None = None, ignored_patterns: list[str] | None = None
+    root_dir: Path, ignored_patterns: list[str] | None = None
 ) -> None:
     args = parse_args()
+
+    context = LintContext(
+        root_dir=root_dir,
+        versioned_files=find_versioned_files(root_dir=root_dir),
+    )
     if args.path:
         files = args.path
     else:
-        files = find_versioned_files(root_dir=root_dir)
-
-    files = filter_files(files, ignored_patterns, debug=args.debug)
+        files = context.versioned_files
+    files = list(filter_files(files, ignored_patterns, debug=args.debug))
 
     exit_code = 0
     for file in files:
         if args.debug:
             print(f"Checking {file}...", file=sys.stderr)
-        for lint_warning in lint_file(file):
+        for lint_warning in lint_file(context, file):
             print(str(lint_warning), file=sys.stderr)
             exit_code = 1
+
+    if args.debug:
+        print(f"Checking files in bulk {file}...", file=sys.stderr)
+    for lint_warning in lint_bulk_files(context, files):
+        print(str(lint_warning), file=sys.stderr)
+        exit_code = 1
 
     exit(exit_code)
