@@ -65,6 +65,7 @@ sources = [
   'src/engine/image.c',
   'src/enum_str.c',
   'src/filesystem.c',
+  'src/game/console/commands/config.c',
   'src/game/console/commands/pos.c',
   'src/game/console/commands/set_health.c',
   'src/game/items.c',
