@@ -12,9 +12,7 @@
 
 static const char *Console_Cmd_Config_Resolve(const char *option_name);
 static bool Console_Cmd_Config_SameKey(const char *key1, const char *key2);
-
-static const CONFIG_OPTION *Console_Cmd_Config_GetOptionFromKey(
-    const char *key);
+static char *Console_Cmd_Config_NormalizeKey(const char *key);
 
 static bool Console_Cmd_Config_GetCurrentValue(
     const CONFIG_OPTION *option, char *target, size_t target_size);
@@ -57,17 +55,17 @@ static bool Console_Cmd_Config_SameKey(const char *key1, const char *key2)
     return true;
 }
 
-static const CONFIG_OPTION *Console_Cmd_Config_GetOptionFromKey(
-    const char *const key)
+static char *Console_Cmd_Config_NormalizeKey(const char *key)
 {
-    for (const CONFIG_OPTION *option = Config_GetOptionMap();
-         option->name != NULL; option++) {
-        if (Console_Cmd_Config_SameKey(option->name, key)) {
-            return option;
+    // TODO: Once we support arbitrary glyphs, this conversion should
+    // no longer be necessary.
+    char *result = Memory_DupStr(key);
+    for (uint32_t i = 0; i < strlen(result); i++) {
+        if (result[i] == '_') {
+            result[i] = '-';
         }
     }
-
-    return NULL;
+    return result;
 }
 
 static bool Console_Cmd_Config_GetCurrentValue(
@@ -165,13 +163,70 @@ static bool Console_Cmd_Config_SetCurrentValue(
     return false;
 }
 
+const CONFIG_OPTION *Console_Cmd_Config_GetOptionFromKey(const char *const key)
+{
+    for (const CONFIG_OPTION *option = Config_GetOptionMap();
+         option->name != NULL; option++) {
+        if (Console_Cmd_Config_SameKey(option->name, key)) {
+            return option;
+        }
+    }
+
+    return NULL;
+}
+
+const CONFIG_OPTION *Console_Cmd_Config_GetOptionFromTarget(
+    const void *const target)
+{
+    for (const CONFIG_OPTION *option = Config_GetOptionMap();
+         option->name != NULL; option++) {
+        if (option->target == target) {
+            return option;
+        }
+    }
+
+    return NULL;
+}
+
+COMMAND_RESULT Console_Cmd_Config_Helper(
+    const CONFIG_OPTION *const option, const char *const new_value)
+{
+    assert(option != NULL);
+
+    char *normalized_name = Console_Cmd_Config_NormalizeKey(option->name);
+
+    COMMAND_RESULT result = CR_BAD_INVOCATION;
+    if (new_value == NULL || String_IsEmpty(new_value)) {
+        char cur_value[128];
+        if (Console_Cmd_Config_GetCurrentValue(option, cur_value, 128)) {
+            Console_Log(GS(OSD_CONFIG_OPTION_GET), normalized_name, cur_value);
+            result = CR_SUCCESS;
+        }
+    }
+
+    if (Console_Cmd_Config_SetCurrentValue(option, new_value)) {
+        Config_Sanitize();
+        Config_Write();
+        Config_ApplyChanges();
+
+        char final_value[128];
+        assert(Console_Cmd_Config_GetCurrentValue(option, final_value, 128));
+        Console_Log(GS(OSD_CONFIG_OPTION_SET), normalized_name, final_value);
+        result = CR_SUCCESS;
+    }
+
+cleanup:
+    Memory_FreePointer(&normalized_name);
+    return result;
+}
+
 static COMMAND_RESULT Console_Cmd_Config(const char *const args)
 {
     COMMAND_RESULT result = CR_BAD_INVOCATION;
 
     char *key = Memory_DupStr(args);
-    char *space = strchr(key, ' ');
-    char *new_value = NULL;
+    char *const space = strchr(key, ' ');
+    const char *new_value = NULL;
     if (space != NULL) {
         new_value = space + 1;
         space[0] = '\0'; // NULL-terminate the key
@@ -182,27 +237,8 @@ static COMMAND_RESULT Console_Cmd_Config(const char *const args)
     if (option == NULL) {
         Console_Log(GS(OSD_CONFIG_OPTION_UNKNOWN_OPTION), key);
         result = CR_FAILURE;
-        goto cleanup;
-    }
-
-    if (new_value != NULL) {
-        if (Console_Cmd_Config_SetCurrentValue(option, new_value)) {
-            Config_Sanitize();
-            Config_Write();
-            Config_ApplyChanges();
-
-            char final_value[128];
-            assert(
-                Console_Cmd_Config_GetCurrentValue(option, final_value, 128));
-            Console_Log(GS(OSD_CONFIG_OPTION_SET), key, final_value);
-            result = CR_SUCCESS;
-        }
     } else {
-        char cur_value[128];
-        if (Console_Cmd_Config_GetCurrentValue(option, cur_value, 128)) {
-            Console_Log(GS(OSD_CONFIG_OPTION_GET), key, cur_value);
-            result = CR_SUCCESS;
-        }
+        result = Console_Cmd_Config_Helper(option, new_value);
     }
 
 cleanup:
