@@ -10,13 +10,18 @@
 #include <stdio.h>
 #include <string.h>
 
-static COMMAND_RESULT Console_Cmd_Set(const char *args);
-static bool Console_Cmd_Config_SetCurrentValue(
-    const char *key, const char *new_value);
 static const char *Console_Cmd_Config_Resolve(const char *option_name);
 static bool Console_Cmd_Config_SameKey(const char *key1, const char *key2);
+
+static const CONFIG_OPTION *Console_Cmd_Config_GetOptionFromKey(
+    const char *key);
+
 static bool Console_Cmd_Config_GetCurrentValue(
-    const char *key, char *target, size_t target_size);
+    const CONFIG_OPTION *option, char *target, size_t target_size);
+static bool Console_Cmd_Config_SetCurrentValue(
+    const CONFIG_OPTION *option, const char *new_value);
+
+static COMMAND_RESULT Console_Cmd_Set(const char *args);
 
 static const char *Console_Cmd_Config_Resolve(const char *const option_name)
 {
@@ -52,43 +57,46 @@ static bool Console_Cmd_Config_SameKey(const char *key1, const char *key2)
     return true;
 }
 
-static bool Console_Cmd_Config_GetCurrentValue(
-    const char *const key, char *target, const size_t target_size)
+static const CONFIG_OPTION *Console_Cmd_Config_GetOptionFromKey(
+    const char *const key)
 {
-    const CONFIG_OPTION *found_option = NULL;
     for (const CONFIG_OPTION *option = Config_GetOptionMap();
          option->name != NULL; option++) {
-        if (!Console_Cmd_Config_SameKey(option->name, key)) {
-            continue;
+        if (Console_Cmd_Config_SameKey(option->name, key)) {
+            return option;
         }
-        found_option = option;
-        break;
     }
 
-    if (found_option == NULL) {
+    return NULL;
+}
+
+static bool Console_Cmd_Config_GetCurrentValue(
+    const CONFIG_OPTION *const option, char *target, const size_t target_size)
+{
+    if (option == NULL) {
         return false;
     }
 
-    assert(found_option->target != NULL);
-    switch (found_option->type) {
+    assert(option->target != NULL);
+    switch (option->type) {
     case COT_BOOL:
         snprintf(
             target, target_size, "%s",
-            *(bool *)found_option->target ? GS(MISC_ON) : GS(MISC_OFF));
+            *(bool *)option->target ? GS(MISC_ON) : GS(MISC_OFF));
         break;
     case COT_INT32:
-        snprintf(target, target_size, "%d", *(int32_t *)found_option->target);
+        snprintf(target, target_size, "%d", *(int32_t *)option->target);
         break;
     case COT_FLOAT:
-        snprintf(target, target_size, "%.2f", *(float *)found_option->target);
+        snprintf(target, target_size, "%.2f", *(float *)option->target);
         break;
     case COT_DOUBLE:
-        snprintf(target, target_size, "%.2f", *(double *)found_option->target);
+        snprintf(target, target_size, "%.2f", *(double *)option->target);
         break;
     case COT_ENUM:
-        for (const ENUM_STRING_MAP *enum_map = found_option->param;
+        for (const ENUM_STRING_MAP *enum_map = option->param;
              enum_map->text != NULL; enum_map++) {
-            if (enum_map->value == *(int32_t *)found_option->target) {
+            if (enum_map->value == *(int32_t *)option->target) {
                 strncpy(target, enum_map->text, target_size);
             }
         }
@@ -98,26 +106,20 @@ static bool Console_Cmd_Config_GetCurrentValue(
 }
 
 static bool Console_Cmd_Config_SetCurrentValue(
-    const char *const key, const char *const new_value)
+    const CONFIG_OPTION *const option, const char *const new_value)
 {
-    const CONFIG_OPTION *found_option = NULL;
-
-    for (const CONFIG_OPTION *option = Config_GetOptionMap();
-         option->name != NULL; option++) {
-        if (!Console_Cmd_Config_SameKey(option->name, key)) {
-            continue;
-        }
-        found_option = option;
-        break;
+    if (option == NULL) {
+        return CR_BAD_INVOCATION;
     }
 
-    switch (found_option->type) {
+    assert(option->target != NULL);
+    switch (option->type) {
     case COT_BOOL:
         if (String_Match(new_value, "on|true|1")) {
-            *(bool *)found_option->target = true;
+            *(bool *)option->target = true;
             return true;
         } else if (String_Match(new_value, "off|false|0")) {
-            *(bool *)found_option->target = false;
+            *(bool *)option->target = false;
             return true;
         }
         break;
@@ -125,7 +127,7 @@ static bool Console_Cmd_Config_SetCurrentValue(
     case COT_INT32: {
         int32_t new_value_typed;
         if (sscanf(new_value, "%d", &new_value_typed) == 1) {
-            *(int32_t *)found_option->target = new_value_typed;
+            *(int32_t *)option->target = new_value_typed;
             return true;
         }
         break;
@@ -134,7 +136,7 @@ static bool Console_Cmd_Config_SetCurrentValue(
     case COT_FLOAT: {
         float new_value_typed;
         if (sscanf(new_value, "%f", &new_value_typed) == 1) {
-            *(float *)found_option->target = new_value_typed;
+            *(float *)option->target = new_value_typed;
             return true;
         }
         break;
@@ -143,17 +145,17 @@ static bool Console_Cmd_Config_SetCurrentValue(
     case COT_DOUBLE: {
         double new_value_typed;
         if (sscanf(new_value, "%lf", &new_value_typed) == 1) {
-            *(double *)found_option->target = new_value_typed;
+            *(double *)option->target = new_value_typed;
             return true;
         }
         break;
     }
 
     case COT_ENUM:
-        for (const ENUM_STRING_MAP *enum_map = found_option->param;
+        for (const ENUM_STRING_MAP *enum_map = option->param;
              enum_map->text != NULL; enum_map++) {
             if (String_Equivalent(enum_map->text, new_value)) {
-                *(int32_t *)found_option->target = enum_map->value;
+                *(int32_t *)option->target = enum_map->value;
                 return true;
             }
         }
@@ -175,20 +177,29 @@ static COMMAND_RESULT Console_Cmd_Config(const char *const args)
         space[0] = '\0'; // NULL-terminate the key
     }
 
+    const CONFIG_OPTION *const option =
+        Console_Cmd_Config_GetOptionFromKey(key);
+    if (option == NULL) {
+        Console_Log(GS(OSD_CONFIG_OPTION_UNKNOWN_OPTION), key);
+        result = CR_FAILURE;
+        goto cleanup;
+    }
+
     if (new_value != NULL) {
-        if (Console_Cmd_Config_SetCurrentValue(key, new_value)) {
+        if (Console_Cmd_Config_SetCurrentValue(option, new_value)) {
             Config_Sanitize();
             Config_Write();
             Config_ApplyChanges();
 
             char final_value[128];
-            assert(Console_Cmd_Config_GetCurrentValue(key, final_value, 128));
+            assert(
+                Console_Cmd_Config_GetCurrentValue(option, final_value, 128));
             Console_Log(GS(OSD_CONFIG_OPTION_SET), key, final_value);
             result = CR_SUCCESS;
         }
     } else {
         char cur_value[128];
-        if (Console_Cmd_Config_GetCurrentValue(key, cur_value, 128)) {
+        if (Console_Cmd_Config_GetCurrentValue(option, cur_value, 128)) {
             Console_Log(GS(OSD_CONFIG_OPTION_GET), key, cur_value);
             result = CR_SUCCESS;
         }
