@@ -10,18 +10,18 @@
 #include <stdio.h>
 #include <string.h>
 
-static const char *Console_Cmd_Config_Resolve(const char *option_name);
-static bool Console_Cmd_Config_SameKey(const char *key1, const char *key2);
-static char *Console_Cmd_Config_NormalizeKey(const char *key);
+static const char *M_Resolve(const char *option_name);
+static bool M_SameKey(const char *key1, const char *key2);
+static char *M_NormalizeKey(const char *key);
 
-static bool Console_Cmd_Config_GetCurrentValue(
+static bool M_GetCurrentValue(
     const CONFIG_OPTION *option, char *target, size_t target_size);
-static bool Console_Cmd_Config_SetCurrentValue(
+static bool M_SetCurrentValue(
     const CONFIG_OPTION *option, const char *new_value);
 
 static COMMAND_RESULT Console_Cmd_Set(const char *args);
 
-static const char *Console_Cmd_Config_Resolve(const char *const option_name)
+static const char *M_Resolve(const char *const option_name)
 {
     const char *dot = strrchr(option_name, '.');
     if (dot) {
@@ -30,10 +30,10 @@ static const char *Console_Cmd_Config_Resolve(const char *const option_name)
     return option_name;
 }
 
-static bool Console_Cmd_Config_SameKey(const char *key1, const char *key2)
+static bool M_SameKey(const char *key1, const char *key2)
 {
-    key1 = Console_Cmd_Config_Resolve(key1);
-    key2 = Console_Cmd_Config_Resolve(key2);
+    key1 = M_Resolve(key1);
+    key2 = M_Resolve(key2);
     const size_t len1 = strlen(key1);
     const size_t len2 = strlen(key2);
     if (len1 != len2) {
@@ -55,7 +55,7 @@ static bool Console_Cmd_Config_SameKey(const char *key1, const char *key2)
     return true;
 }
 
-static char *Console_Cmd_Config_NormalizeKey(const char *key)
+static char *M_NormalizeKey(const char *key)
 {
     // TODO: Once we support arbitrary glyphs, this conversion should
     // no longer be necessary.
@@ -68,7 +68,7 @@ static char *Console_Cmd_Config_NormalizeKey(const char *key)
     return result;
 }
 
-static bool Console_Cmd_Config_GetCurrentValue(
+static bool M_GetCurrentValue(
     const CONFIG_OPTION *const option, char *target, const size_t target_size)
 {
     if (option == NULL) {
@@ -103,7 +103,7 @@ static bool Console_Cmd_Config_GetCurrentValue(
     return true;
 }
 
-static bool Console_Cmd_Config_SetCurrentValue(
+static bool M_SetCurrentValue(
     const CONFIG_OPTION *const option, const char *const new_value)
 {
     if (option == NULL) {
@@ -167,7 +167,7 @@ const CONFIG_OPTION *Console_Cmd_Config_GetOptionFromKey(const char *const key)
 {
     for (const CONFIG_OPTION *option = Config_GetOptionMap();
          option->name != NULL; option++) {
-        if (Console_Cmd_Config_SameKey(option->name, key)) {
+        if (M_SameKey(option->name, key)) {
             return option;
         }
     }
@@ -193,24 +193,24 @@ COMMAND_RESULT Console_Cmd_Config_Helper(
 {
     assert(option != NULL);
 
-    char *normalized_name = Console_Cmd_Config_NormalizeKey(option->name);
+    char *normalized_name = M_NormalizeKey(option->name);
 
     COMMAND_RESULT result = CR_BAD_INVOCATION;
     if (new_value == NULL || String_IsEmpty(new_value)) {
         char cur_value[128];
-        if (Console_Cmd_Config_GetCurrentValue(option, cur_value, 128)) {
+        if (M_GetCurrentValue(option, cur_value, 128)) {
             Console_Log(GS(OSD_CONFIG_OPTION_GET), normalized_name, cur_value);
             result = CR_SUCCESS;
         }
     }
 
-    if (Console_Cmd_Config_SetCurrentValue(option, new_value)) {
+    if (M_SetCurrentValue(option, new_value)) {
         Config_Sanitize();
         Config_Write();
         Config_ApplyChanges();
 
         char final_value[128];
-        assert(Console_Cmd_Config_GetCurrentValue(option, final_value, 128));
+        assert(M_GetCurrentValue(option, final_value, 128));
         Console_Log(GS(OSD_CONFIG_OPTION_SET), normalized_name, final_value);
         result = CR_SUCCESS;
     }
@@ -220,7 +220,7 @@ cleanup:
     return result;
 }
 
-static COMMAND_RESULT Console_Cmd_Config(const char *const args)
+static COMMAND_RESULT M_Entrypoint(const char *const args)
 {
     COMMAND_RESULT result = CR_BAD_INVOCATION;
 
@@ -248,5 +248,5 @@ cleanup:
 
 CONSOLE_COMMAND g_Console_Cmd_Config = {
     .prefix = "set",
-    .proc = Console_Cmd_Config,
+    .proc = M_Entrypoint,
 };

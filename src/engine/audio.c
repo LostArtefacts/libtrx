@@ -15,10 +15,9 @@ static size_t m_MixBufferCapacity = 0;
 static float *m_MixBuffer = NULL;
 static Uint8 m_Silence = 0;
 
-static void Audio_MixerCallback(
-    void *userdata, Uint8 *stream_data, int32_t len);
+static void M_MixerCallback(void *userdata, Uint8 *stream_data, int32_t len);
 
-static void Audio_MixerCallback(void *userdata, Uint8 *stream_data, int32_t len)
+static void M_MixerCallback(void *userdata, Uint8 *stream_data, int32_t len)
 {
     memset(m_MixBuffer, m_Silence, len);
     Audio_Stream_Mix(m_MixBuffer, len);
@@ -46,7 +45,7 @@ bool Audio_Init(void)
     desired.format = AUDIO_WORKING_FORMAT;
     desired.channels = AUDIO_WORKING_CHANNELS;
     desired.samples = AUDIO_SAMPLES;
-    desired.callback = Audio_MixerCallback;
+    desired.callback = M_MixerCallback;
     desired.userdata = NULL;
 
     SDL_AudioSpec delivered;

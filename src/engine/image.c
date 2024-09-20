@@ -40,17 +40,16 @@ typedef struct {
     AVPacket *packet;
 } IMAGE_READER_CONTEXT;
 
-static bool Image_Reader_Init(const char *path, IMAGE_READER_CONTEXT *ctx);
-static void Image_Reader_Free(IMAGE_READER_CONTEXT *ctx);
-static IMAGE *Image_Reader_ConstructImage(
+static bool M_Init(const char *path, IMAGE_READER_CONTEXT *ctx);
+static void M_Free(IMAGE_READER_CONTEXT *ctx);
+static IMAGE *M_ConstructImage(
     IMAGE_READER_CONTEXT *ctx, int32_t target_width, int32_t target_height,
     IMAGE_FIT_MODE fit_mode);
-static IMAGE_BLIT Image_GetBlit(
+static IMAGE_BLIT M_GetBlit(
     int32_t source_width, int32_t source_height, int32_t target_width,
     int32_t target_height, IMAGE_FIT_MODE fit_mode);
 
-static bool Image_Reader_Init(
-    const char *const path, IMAGE_READER_CONTEXT *const ctx)
+static bool M_Init(const char *const path, IMAGE_READER_CONTEXT *const ctx)
 {
     assert(ctx != NULL);
     ctx->format_ctx = NULL;
@@ -149,14 +148,14 @@ finish:
     if (error_code != 0) {
         LOG_ERROR(
             "Error while opening image %s: %s", path, av_err2str(error_code));
-        Image_Reader_Free(ctx);
+        M_Free(ctx);
         return false;
     }
 
     return true;
 }
 
-static void Image_Reader_Free(IMAGE_READER_CONTEXT *const ctx)
+static void M_Free(IMAGE_READER_CONTEXT *const ctx)
 {
     if (ctx->packet != NULL) {
         av_packet_free(&ctx->packet);
@@ -186,7 +185,7 @@ IMAGE *Image_Create(const int width, const int height)
     return image;
 }
 
-static IMAGE *Image_Reader_ConstructImage(
+static IMAGE *M_ConstructImage(
     IMAGE_READER_CONTEXT *const ctx, const int32_t target_width,
     const int32_t target_height, IMAGE_FIT_MODE fit_mode)
 {
@@ -194,7 +193,7 @@ static IMAGE *Image_Reader_ConstructImage(
     assert(target_width > 0);
     assert(target_height > 0);
 
-    IMAGE_BLIT blit = Image_GetBlit(
+    IMAGE_BLIT blit = M_GetBlit(
         ctx->frame->width, ctx->frame->height, target_width, target_height,
         fit_mode);
 
@@ -230,7 +229,7 @@ static IMAGE *Image_Reader_ConstructImage(
     return target_image;
 }
 
-static IMAGE_BLIT Image_GetBlit(
+static IMAGE_BLIT M_GetBlit(
     const int32_t source_width, const int32_t source_height,
     const int32_t target_width, const int32_t target_height,
     IMAGE_FIT_MODE fit_mode)
@@ -315,14 +314,14 @@ IMAGE *Image_CreateFromFile(const char *const path)
     assert(path != NULL);
 
     IMAGE_READER_CONTEXT ctx;
-    if (!Image_Reader_Init(path, &ctx)) {
+    if (!M_Init(path, &ctx)) {
         return NULL;
     }
 
-    IMAGE *target_image = Image_Reader_ConstructImage(
+    IMAGE *target_image = M_ConstructImage(
         &ctx, ctx.frame->width, ctx.frame->height, IMAGE_FIT_STRETCH);
 
-    Image_Reader_Free(&ctx);
+    M_Free(&ctx);
 
     return target_image;
 }
@@ -334,14 +333,14 @@ IMAGE *Image_CreateFromFileInto(
     assert(path != NULL);
 
     IMAGE_READER_CONTEXT ctx;
-    if (!Image_Reader_Init(path, &ctx)) {
+    if (!M_Init(path, &ctx)) {
         return NULL;
     }
 
-    IMAGE *target_image = Image_Reader_ConstructImage(
-        &ctx, target_width, target_height, fit_mode);
+    IMAGE *target_image =
+        M_ConstructImage(&ctx, target_width, target_height, fit_mode);
 
-    Image_Reader_Free(&ctx);
+    M_Free(&ctx);
 
     return target_image;
 }
@@ -514,7 +513,7 @@ IMAGE *Image_Scale(
     assert(target_width > 0);
     assert(target_height > 0);
 
-    IMAGE_BLIT blit = Image_GetBlit(
+    IMAGE_BLIT blit = M_GetBlit(
         source_image->width, source_image->height, target_width, target_height,
         fit_mode);
 

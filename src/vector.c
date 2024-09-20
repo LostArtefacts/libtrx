@@ -16,7 +16,16 @@ struct VECTOR_PRIV {
     char *items;
 };
 
-static void Vector_EnsureCapacity(VECTOR *vector, int32_t n);
+static void M_EnsureCapacity(VECTOR *vector, int32_t n);
+
+static void M_EnsureCapacity(VECTOR *const vector, const int32_t n)
+{
+    while (vector->count + n > vector->capacity) {
+        vector->capacity *= VECTOR_GROWTH_RATE;
+        P(vector).items = Memory_Realloc(
+            P(vector).items, vector->item_size * vector->capacity);
+    }
+}
 
 VECTOR *Vector_Create(const size_t item_size)
 {
@@ -40,15 +49,6 @@ void Vector_Free(VECTOR *vector)
     Memory_FreePointer(&P(vector).items);
     Memory_FreePointer(&vector->priv);
     Memory_FreePointer(&vector);
-}
-
-static void Vector_EnsureCapacity(VECTOR *const vector, const int32_t n)
-{
-    while (vector->count + n > vector->capacity) {
-        vector->capacity *= VECTOR_GROWTH_RATE;
-        P(vector).items = Memory_Realloc(
-            P(vector).items, vector->item_size * vector->capacity);
-    }
 }
 
 int32_t Vector_IndexOf(const VECTOR *const vector, const void *const item)
@@ -90,14 +90,14 @@ void *Vector_Get(VECTOR *const vector, const int32_t index)
 
 void Vector_Add(VECTOR *const vector, void *const item)
 {
-    Vector_EnsureCapacity(vector, 1);
+    M_EnsureCapacity(vector, 1);
     Vector_Insert(vector, vector->count, item);
 }
 
 void Vector_Insert(VECTOR *const vector, const int32_t index, void *const item)
 {
     assert(index >= 0 && index <= vector->count);
-    Vector_EnsureCapacity(vector, 1);
+    M_EnsureCapacity(vector, 1);
     char *const items = P(vector).items;
     if (index < vector->count) {
         memmove(

@@ -6,13 +6,12 @@
 
 #include <string.h>
 
-static bool Config_ReadFromJSON(
+static bool M_ReadFromJSON(
     const char *json, void (*load)(struct json_object_s *root_obj));
-static char *Config_WriteToJSON(void (*dump)(struct json_object_s *root_obj));
+static char *M_WriteToJSON(void (*dump)(struct json_object_s *root_obj));
+static const char *M_ResolveOptionName(const char *option_name);
 
-static const char *ConfigFile_ResolveOptionName(const char *option_name);
-
-static bool Config_ReadFromJSON(
+static bool M_ReadFromJSON(
     const char *cfg_data, void (*load)(struct json_object_s *root_obj))
 {
     bool result = false;
@@ -42,7 +41,7 @@ static bool Config_ReadFromJSON(
     return result;
 }
 
-static char *Config_WriteToJSON(void (*dump)(struct json_object_s *root_obj))
+static char *M_WriteToJSON(void (*dump)(struct json_object_s *root_obj))
 {
     struct json_object_s *root_obj = json_object_new();
 
@@ -56,7 +55,7 @@ static char *Config_WriteToJSON(void (*dump)(struct json_object_s *root_obj))
     return data;
 }
 
-static const char *ConfigFile_ResolveOptionName(const char *option_name)
+static const char *M_ResolveOptionName(const char *option_name)
 {
     const char *dot = strrchr(option_name, '.');
     if (dot) {
@@ -73,9 +72,9 @@ bool ConfigFile_Read(
 
     if (!File_Load(path, &cfg_data, NULL)) {
         LOG_WARNING("'%s' not loaded - default settings will apply", path);
-        result = Config_ReadFromJSON("{}", load);
+        result = M_ReadFromJSON("{}", load);
     } else {
-        result = Config_ReadFromJSON(cfg_data, load);
+        result = M_ReadFromJSON(cfg_data, load);
     }
 
     Memory_FreePointer(&cfg_data);
@@ -92,7 +91,7 @@ bool ConfigFile_Write(
         return false;
     }
 
-    char *data = Config_WriteToJSON(dump);
+    char *data = M_WriteToJSON(dump);
     File_WriteData(fp, data, strlen(data));
     File_Close(fp);
     Memory_FreePointer(&data);
@@ -108,31 +107,31 @@ void ConfigFile_LoadOptions(
         switch (opt->type) {
         case COT_BOOL:
             *(bool *)opt->target = json_object_get_bool(
-                root_obj, ConfigFile_ResolveOptionName(opt->name),
+                root_obj, M_ResolveOptionName(opt->name),
                 *(bool *)opt->default_value);
             break;
 
         case COT_INT32:
             *(int32_t *)opt->target = json_object_get_int(
-                root_obj, ConfigFile_ResolveOptionName(opt->name),
+                root_obj, M_ResolveOptionName(opt->name),
                 *(int32_t *)opt->default_value);
             break;
 
         case COT_FLOAT:
             *(float *)opt->target = json_object_get_double(
-                root_obj, ConfigFile_ResolveOptionName(opt->name),
+                root_obj, M_ResolveOptionName(opt->name),
                 *(float *)opt->default_value);
             break;
 
         case COT_DOUBLE:
             *(double *)opt->target = json_object_get_double(
-                root_obj, ConfigFile_ResolveOptionName(opt->name),
+                root_obj, M_ResolveOptionName(opt->name),
                 *(double *)opt->default_value);
             break;
 
         case COT_ENUM:
             *(int *)opt->target = ConfigFile_ReadEnum(
-                root_obj, ConfigFile_ResolveOptionName(opt->name),
+                root_obj, M_ResolveOptionName(opt->name),
                 *(int *)opt->default_value,
                 (const ENUM_STRING_MAP *)opt->param);
         }
@@ -148,32 +147,31 @@ void ConfigFile_DumpOptions(
         switch (opt->type) {
         case COT_BOOL:
             json_object_append_bool(
-                root_obj, ConfigFile_ResolveOptionName(opt->name),
-                *(bool *)opt->target);
+                root_obj, M_ResolveOptionName(opt->name), *(bool *)opt->target);
             break;
 
         case COT_INT32:
             json_object_append_int(
-                root_obj, ConfigFile_ResolveOptionName(opt->name),
+                root_obj, M_ResolveOptionName(opt->name),
                 *(int32_t *)opt->target);
             break;
 
         case COT_FLOAT:
             json_object_append_double(
-                root_obj, ConfigFile_ResolveOptionName(opt->name),
+                root_obj, M_ResolveOptionName(opt->name),
                 *(float *)opt->target);
             break;
 
         case COT_DOUBLE:
             json_object_append_double(
-                root_obj, ConfigFile_ResolveOptionName(opt->name),
+                root_obj, M_ResolveOptionName(opt->name),
                 *(double *)opt->target);
             break;
 
         case COT_ENUM:
             ConfigFile_WriteEnum(
-                root_obj, ConfigFile_ResolveOptionName(opt->name),
-                *(int *)opt->target, (const ENUM_STRING_MAP *)opt->param);
+                root_obj, M_ResolveOptionName(opt->name), *(int *)opt->target,
+                (const ENUM_STRING_MAP *)opt->param);
             break;
         }
         opt++;

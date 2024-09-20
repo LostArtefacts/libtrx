@@ -31,10 +31,10 @@ typedef struct GFX_CONTEXT {
 
 static GFX_CONTEXT m_Context = { 0 };
 
-static bool GFX_Context_IsExtensionSupported(const char *name);
-static void GFX_Context_CheckExtensionSupport(const char *name);
+static bool M_IsExtensionSupported(const char *name);
+static void M_CheckExtensionSupport(const char *name);
 
-static bool GFX_Context_IsExtensionSupported(const char *name)
+static bool M_IsExtensionSupported(const char *name)
 {
     int number_of_extensions;
 
@@ -52,11 +52,10 @@ static bool GFX_Context_IsExtensionSupported(const char *name)
     return false;
 }
 
-static void GFX_Context_CheckExtensionSupport(const char *name)
+static void M_CheckExtensionSupport(const char *name)
 {
     LOG_INFO(
-        "%s supported: %s", name,
-        GFX_Context_IsExtensionSupported(name) ? "yes" : "no");
+        "%s supported: %s", name, M_IsExtensionSupported(name) ? "yes" : "no");
 }
 
 void GFX_Context_SwitchToWindowViewport(void)
@@ -150,8 +149,8 @@ void GFX_Context_Attach(void *window_handle)
 
     // Check the availability of non-Core Profile extensions for OpenGL 2.1
     if (GFX_GL_DEFAULT_BACKEND == GFX_GL_21) {
-        GFX_Context_CheckExtensionSupport("GL_ARB_explicit_attrib_location");
-        GFX_Context_CheckExtensionSupport("GL_EXT_gpu_shader4");
+        M_CheckExtensionSupport("GL_ARB_explicit_attrib_location");
+        M_CheckExtensionSupport("GL_EXT_gpu_shader4");
     }
 
     glClearColor(0, 0, 0, 0);

@@ -11,59 +11,53 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool bson_write_get_marker_size(size_t *size, const char *key);
-static bool bson_write_get_null_wrapped(size_t *size, const char *key);
-static bool bson_write_get_boolean_wrapped_size(size_t *size, const char *key);
-static bool bson_write_get_int32_size(size_t *size);
-static bool bson_write_get_int32_wrapped_size(size_t *size, const char *key);
-static bool bson_write_get_double_size(size_t *size);
-static bool bson_write_get_double_wrapped_size(size_t *size, const char *key);
-static bool bson_write_get_number_wrapped_size(
+static bool M_GetMarkerSize(size_t *size, const char *key);
+static bool M_GetNullWrappedSize(size_t *size, const char *key);
+static bool M_GetBoolWrappedSize(size_t *size, const char *key);
+static bool M_GetInt32Size(size_t *size);
+static bool M_GetInt32WrappedSize(size_t *size, const char *key);
+static bool M_GetDoubleSize(size_t *size);
+static bool M_GetDoubleWrappedSize(size_t *size, const char *key);
+static bool M_GetNumberWrappedSize(
     size_t *size, const char *key, const struct json_number_s *number);
-static bool bson_write_get_string_size(
-    size_t *size, const struct json_string_s *string);
-static bool bson_write_get_string_wrapped_size(
+static bool M_GetStringSize(size_t *size, const struct json_string_s *string);
+static bool M_GetStringWrappedSize(
     size_t *size, const char *key, const struct json_string_s *string);
-static bool bson_write_get_array_size(
-    size_t *size, const struct json_array_s *array);
-static bool bson_write_get_array_wrapped_size(
+static bool M_GetArraySize(size_t *size, const struct json_array_s *array);
+static bool M_GetArrayWrappedSize(
     size_t *size, const char *key, const struct json_array_s *array);
-static bool bson_write_get_object_size(
-    size_t *size, const struct json_object_s *object);
-static bool bson_write_get_object_wrapped_size(
+static bool M_GetObjectSize(size_t *size, const struct json_object_s *object);
+static bool M_GetObjectWrappedSize(
     size_t *size, const char *key, const struct json_object_s *object);
-static bool bson_write_get_value_size(
-    size_t *size, const struct json_value_s *value);
-static bool bson_write_get_value_wrapped_size(
+static bool M_GetValueSize(size_t *size, const struct json_value_s *value);
+static bool M_GetValueWrappedSize(
     size_t *size, const char *key, const struct json_value_s *value);
 
-static char *bson_write_marker(
-    char *data, const char *key, const uint8_t marker);
-static char *bson_write_null_wrapped(char *data, const char *key);
-static char *bson_write_boolean_wrapped(
-    char *data, const char *key, bool value);
-static char *bson_write_int32(char *data, const int32_t value);
-static char *bson_write_int32_wrapped(
+static char *M_WriteMarker(char *data, const char *key, const uint8_t marker);
+static char *M_WriteNullWrapped(char *data, const char *key);
+static char *M_WriteBoolWrapped(char *data, const char *key, bool value);
+static char *M_WriteInt32(char *data, const int32_t value);
+static char *M_WriteInt32Wrapped(
     char *data, const char *key, const int32_t value);
-static char *bson_write_double(char *data, const double value);
-static char *bson_write_double_wrapped(
+static char *M_WriteDouble(char *data, const double value);
+static char *M_WriteDoubleWrapped(
     char *data, const char *key, const double value);
-static char *bson_write_number_wrapped(
+static char *M_WriteNumberWrapped(
     char *data, const char *key, const struct json_number_s *number);
-static char *bson_write_string(char *data, const struct json_string_s *string);
-static char *bson_write_string_wrapped(
+static char *M_WriteString(char *data, const struct json_string_s *string);
+static char *M_WriteStringWrapped(
     char *data, const char *key, const struct json_string_s *string);
-static char *bson_write_array(char *data, const struct json_array_s *array);
-static char *bson_write_array_wrapped(
+static char *M_WriteArray(char *data, const struct json_array_s *array);
+static char *M_WriteArrayWrapped(
     char *data, const char *key, const struct json_array_s *array);
-static char *bson_write_object(char *data, const struct json_object_s *object);
-static char *bson_write_object_wrapped(
+static char *M_WriteObject(char *data, const struct json_object_s *object);
+static char *M_WriteObjectWrapped(
     char *data, const char *key, const struct json_object_s *object);
-static char *bson_write_value(char *data, const struct json_value_s *value);
-static char *bson_write_value_wrapped(
+static char *M_WriteValue(char *data, const struct json_value_s *value);
+static char *M_WriteValueWrapped(
     char *data, const char *key, const struct json_value_s *value);
 
-static bool bson_write_get_marker_size(size_t *size, const char *key)
+static bool M_GetMarkerSize(size_t *size, const char *key)
 {
     assert(size);
     assert(key);
@@ -73,65 +67,65 @@ static bool bson_write_get_marker_size(size_t *size, const char *key)
     return true;
 }
 
-static bool bson_write_get_null_wrapped_size(size_t *size, const char *key)
+static bool M_GetNullWrappedSize(size_t *size, const char *key)
 {
     assert(size);
     assert(key);
-    return bson_write_get_marker_size(size, key);
+    return M_GetMarkerSize(size, key);
 }
 
-static bool bson_write_get_boolean_wrapped_size(size_t *size, const char *key)
+static bool M_GetBoolWrappedSize(size_t *size, const char *key)
 {
     assert(size);
     assert(key);
-    if (!bson_write_get_marker_size(size, key)) {
+    if (!M_GetMarkerSize(size, key)) {
         return false;
     }
     *size += 1;
     return true;
 }
 
-static bool bson_write_get_int32_size(size_t *size)
+static bool M_GetInt32Size(size_t *size)
 {
     assert(size);
     *size += sizeof(int32_t);
     return true;
 }
 
-static bool bson_write_get_int32_wrapped_size(size_t *size, const char *key)
+static bool M_GetInt32WrappedSize(size_t *size, const char *key)
 {
     assert(size);
     assert(key);
-    if (!bson_write_get_marker_size(size, key)) {
+    if (!M_GetMarkerSize(size, key)) {
         return false;
     }
-    if (!bson_write_get_int32_size(size)) {
+    if (!M_GetInt32Size(size)) {
         return false;
     }
     return true;
 }
 
-static bool bson_write_get_double_size(size_t *size)
+static bool M_GetDoubleSize(size_t *size)
 {
     assert(size);
     *size += sizeof(double);
     return true;
 }
 
-static bool bson_write_get_double_wrapped_size(size_t *size, const char *key)
+static bool M_GetDoubleWrappedSize(size_t *size, const char *key)
 {
     assert(size);
     assert(key);
-    if (!bson_write_get_marker_size(size, key)) {
+    if (!M_GetMarkerSize(size, key)) {
         return false;
     }
-    if (!bson_write_get_double_size(size)) {
+    if (!M_GetDoubleSize(size)) {
         return false;
     }
     return true;
 }
 
-static bool bson_write_get_number_wrapped_size(
+static bool M_GetNumberWrappedSize(
     size_t *size, const char *key, const struct json_number_s *number)
 {
     assert(size);
@@ -142,7 +136,7 @@ static bool bson_write_get_number_wrapped_size(
 
     // hexadecimal numbers
     if (number->number_size >= 2 && (str[1] == 'x' || str[1] == 'X')) {
-        return bson_write_get_int32_wrapped_size(size, key);
+        return M_GetInt32WrappedSize(size, key);
     }
 
     // skip leading sign
@@ -153,21 +147,20 @@ static bool bson_write_get_number_wrapped_size(
 
     if (!strcmp(str, "Infinity")) {
         // BSON does not support Infinity.
-        return bson_write_get_double_wrapped_size(size, key);
+        return M_GetDoubleWrappedSize(size, key);
     } else if (!strcmp(str, "NaN")) {
         // BSON does not support NaN.
-        return bson_write_get_int32_wrapped_size(size, key);
+        return M_GetInt32WrappedSize(size, key);
     } else if (strchr(str, '.')) {
-        return bson_write_get_double_wrapped_size(size, key);
+        return M_GetDoubleWrappedSize(size, key);
     } else {
-        return bson_write_get_int32_wrapped_size(size, key);
+        return M_GetInt32WrappedSize(size, key);
     }
 
     return false;
 }
 
-static bool bson_write_get_string_size(
-    size_t *size, const struct json_string_s *string)
+static bool M_GetStringSize(size_t *size, const struct json_string_s *string)
 {
     assert(size);
     assert(string);
@@ -177,23 +170,22 @@ static bool bson_write_get_string_size(
     return true;
 }
 
-static bool bson_write_get_string_wrapped_size(
+static bool M_GetStringWrappedSize(
     size_t *size, const char *key, const struct json_string_s *string)
 {
     assert(size);
     assert(key);
     assert(string);
-    if (!bson_write_get_marker_size(size, key)) {
+    if (!M_GetMarkerSize(size, key)) {
         return false;
     }
-    if (!bson_write_get_string_size(size, string)) {
+    if (!M_GetStringSize(size, string)) {
         return false;
     }
     return true;
 }
 
-static bool bson_write_get_array_size(
-    size_t *size, const struct json_array_s *array)
+static bool M_GetArraySize(size_t *size, const struct json_array_s *array)
 {
     assert(size);
     assert(array);
@@ -204,7 +196,7 @@ static bool bson_write_get_array_size(
          element != json_null; element = element->next) {
         sprintf(key, "%d", idx);
         idx++;
-        if (!bson_write_get_value_wrapped_size(size, key, element->value)) {
+        if (!M_GetValueWrappedSize(size, key, element->value)) {
             return false;
         }
     }
@@ -212,30 +204,29 @@ static bool bson_write_get_array_size(
     return true;
 }
 
-static bool bson_write_get_array_wrapped_size(
+static bool M_GetArrayWrappedSize(
     size_t *size, const char *key, const struct json_array_s *array)
 {
     assert(size);
     assert(key);
     assert(array);
-    if (!bson_write_get_marker_size(size, key)) {
+    if (!M_GetMarkerSize(size, key)) {
         return false;
     }
-    if (!bson_write_get_array_size(size, array)) {
+    if (!M_GetArraySize(size, array)) {
         return false;
     }
     return true;
 }
 
-static bool bson_write_get_object_size(
-    size_t *size, const struct json_object_s *object)
+static bool M_GetObjectSize(size_t *size, const struct json_object_s *object)
 {
     assert(size);
     assert(object);
     *size += sizeof(int32_t); // object size
     for (struct json_object_element_s *element = object->start;
          element != json_null; element = element->next) {
-        if (!bson_write_get_value_wrapped_size(
+        if (!M_GetValueWrappedSize(
                 size, element->name->string, element->value)) {
             return false;
         }
@@ -244,40 +235,37 @@ static bool bson_write_get_object_size(
     return true;
 }
 
-static bool bson_write_get_object_wrapped_size(
+static bool M_GetObjectWrappedSize(
     size_t *size, const char *key, const struct json_object_s *object)
 {
     assert(size);
     assert(key);
     assert(object);
-    if (!bson_write_get_marker_size(size, key)) {
+    if (!M_GetMarkerSize(size, key)) {
         return false;
     }
-    if (!bson_write_get_object_size(size, object)) {
+    if (!M_GetObjectSize(size, object)) {
         return false;
     }
     return true;
 }
 
-static bool bson_write_get_value_size(
-    size_t *size, const struct json_value_s *value)
+static bool M_GetValueSize(size_t *size, const struct json_value_s *value)
 {
     assert(size);
     assert(value);
     switch (value->type) {
     case json_type_array:
-        return bson_write_get_array_size(
-            size, (struct json_array_s *)value->payload);
+        return M_GetArraySize(size, (struct json_array_s *)value->payload);
     case json_type_object:
-        return bson_write_get_object_size(
-            size, (struct json_object_s *)value->payload);
+        return M_GetObjectSize(size, (struct json_object_s *)value->payload);
     default:
         LOG_ERROR("Bad BSON root element: %d", value->type);
     }
     return false;
 }
 
-static bool bson_write_get_value_wrapped_size(
+static bool M_GetValueWrappedSize(
     size_t *size, const char *key, const struct json_value_s *value)
 {
     assert(size);
@@ -285,22 +273,22 @@ static bool bson_write_get_value_wrapped_size(
     assert(value);
     switch (value->type) {
     case json_type_null:
-        return bson_write_get_null_wrapped_size(size, key);
+        return M_GetNullWrappedSize(size, key);
     case json_type_true:
-        return bson_write_get_boolean_wrapped_size(size, key);
+        return M_GetBoolWrappedSize(size, key);
     case json_type_false:
-        return bson_write_get_boolean_wrapped_size(size, key);
+        return M_GetBoolWrappedSize(size, key);
     case json_type_number:
-        return bson_write_get_number_wrapped_size(
+        return M_GetNumberWrappedSize(
             size, key, (struct json_number_s *)value->payload);
     case json_type_string:
-        return bson_write_get_string_wrapped_size(
+        return M_GetStringWrappedSize(
             size, key, (struct json_string_s *)value->payload);
     case json_type_array:
-        return bson_write_get_array_wrapped_size(
+        return M_GetArrayWrappedSize(
             size, key, (struct json_array_s *)value->payload);
     case json_type_object:
-        return bson_write_get_object_wrapped_size(
+        return M_GetObjectWrappedSize(
             size, key, (struct json_object_s *)value->payload);
     default:
         LOG_ERROR("Unknown JSON element: %d", value->type);
@@ -308,8 +296,7 @@ static bool bson_write_get_value_wrapped_size(
     }
 }
 
-static char *bson_write_marker(
-    char *data, const char *key, const uint8_t marker)
+static char *M_WriteMarker(char *data, const char *key, const uint8_t marker)
 {
     assert(data);
     assert(key);
@@ -320,23 +307,23 @@ static char *bson_write_marker(
     return data;
 }
 
-static char *bson_write_null_wrapped(char *data, const char *key)
+static char *M_WriteNullWrapped(char *data, const char *key)
 {
     assert(data);
     assert(key);
-    return bson_write_marker(data, key, '\x0A');
+    return M_WriteMarker(data, key, '\x0A');
 }
 
-static char *bson_write_boolean_wrapped(char *data, const char *key, bool value)
+static char *M_WriteBoolWrapped(char *data, const char *key, bool value)
 {
     assert(data);
     assert(key);
-    data = bson_write_marker(data, key, '\x08');
+    data = M_WriteMarker(data, key, '\x08');
     *(int8_t *)data++ = (int8_t)value;
     return data;
 }
 
-static char *bson_write_int32(char *data, const int32_t value)
+static char *M_WriteInt32(char *data, const int32_t value)
 {
     assert(data);
     *(int32_t *)data = value;
@@ -344,16 +331,16 @@ static char *bson_write_int32(char *data, const int32_t value)
     return data;
 }
 
-static char *bson_write_int32_wrapped(
+static char *M_WriteInt32Wrapped(
     char *data, const char *key, const int32_t value)
 {
     assert(data);
     assert(key);
-    data = bson_write_marker(data, key, '\x10');
-    return bson_write_int32(data, value);
+    data = M_WriteMarker(data, key, '\x10');
+    return M_WriteInt32(data, value);
 }
 
-static char *bson_write_double(char *data, const double value)
+static char *M_WriteDouble(char *data, const double value)
 {
     assert(data);
     *(double *)data = value;
@@ -361,16 +348,16 @@ static char *bson_write_double(char *data, const double value)
     return data;
 }
 
-static char *bson_write_double_wrapped(
+static char *M_WriteDoubleWrapped(
     char *data, const char *key, const double value)
 {
     assert(data);
     assert(key);
-    data = bson_write_marker(data, key, '\x01');
-    return bson_write_double(data, value);
+    data = M_WriteMarker(data, key, '\x01');
+    return M_WriteDouble(data, value);
 }
 
-static char *bson_write_number_wrapped(
+static char *M_WriteNumberWrapped(
     char *data, const char *key, const struct json_number_s *number)
 {
     assert(data);
@@ -380,7 +367,7 @@ static char *bson_write_number_wrapped(
 
     // hexadecimal numbers
     if (number->number_size >= 2 && (str[1] == 'x' || str[1] == 'X')) {
-        return bson_write_int32_wrapped(
+        return M_WriteInt32Wrapped(
             data, key, json_strtoumax(number->number, json_null, 0));
     }
 
@@ -392,20 +379,20 @@ static char *bson_write_number_wrapped(
 
     if (!strcmp(str, "Infinity")) {
         // BSON does not support Infinity.
-        return bson_write_double_wrapped(data, key, DBL_MAX);
+        return M_WriteDoubleWrapped(data, key, DBL_MAX);
     } else if (!strcmp(str, "NaN")) {
         // BSON does not support NaN.
-        return bson_write_int32_wrapped(data, key, 0);
+        return M_WriteInt32Wrapped(data, key, 0);
     } else if (strchr(str, '.')) {
-        return bson_write_double_wrapped(data, key, atof(number->number));
+        return M_WriteDoubleWrapped(data, key, atof(number->number));
     } else {
-        return bson_write_int32_wrapped(data, key, atoi(number->number));
+        return M_WriteInt32Wrapped(data, key, atoi(number->number));
     }
 
     return data;
 }
 
-static char *bson_write_string(char *data, const struct json_string_s *string)
+static char *M_WriteString(char *data, const struct json_string_s *string)
 {
     assert(data);
     assert(string);
@@ -417,18 +404,18 @@ static char *bson_write_string(char *data, const struct json_string_s *string)
     return data;
 }
 
-static char *bson_write_string_wrapped(
+static char *M_WriteStringWrapped(
     char *data, const char *key, const struct json_string_s *string)
 {
     assert(data);
     assert(key);
     assert(string);
-    data = bson_write_marker(data, key, '\x02');
-    data = bson_write_string(data, string);
+    data = M_WriteMarker(data, key, '\x02');
+    data = M_WriteString(data, string);
     return data;
 }
 
-static char *bson_write_array(char *data, const struct json_array_s *array)
+static char *M_WriteArray(char *data, const struct json_array_s *array)
 {
     assert(data);
     assert(array);
@@ -440,25 +427,25 @@ static char *bson_write_array(char *data, const struct json_array_s *array)
          element != json_null; element = element->next) {
         sprintf(key, "%d", idx);
         idx++;
-        data = bson_write_value_wrapped(data, key, element->value);
+        data = M_WriteValueWrapped(data, key, element->value);
     }
     *data++ = '\0';
     *(int32_t *)old = data - old;
     return data;
 }
 
-static char *bson_write_array_wrapped(
+static char *M_WriteArrayWrapped(
     char *data, const char *key, const struct json_array_s *array)
 {
     assert(data);
     assert(key);
     assert(array);
-    data = bson_write_marker(data, key, '\x04');
-    data = bson_write_array(data, array);
+    data = M_WriteMarker(data, key, '\x04');
+    data = M_WriteArray(data, array);
     return data;
 }
 
-static char *bson_write_object(char *data, const struct json_object_s *object)
+static char *M_WriteObject(char *data, const struct json_object_s *object)
 {
     assert(data);
     assert(object);
@@ -466,35 +453,34 @@ static char *bson_write_object(char *data, const struct json_object_s *object)
     data += sizeof(int32_t);
     for (struct json_object_element_s *element = object->start;
          element != json_null; element = element->next) {
-        data = bson_write_value_wrapped(
-            data, element->name->string, element->value);
+        data = M_WriteValueWrapped(data, element->name->string, element->value);
     }
     *data++ = '\0';
     *(int32_t *)old = data - old;
     return data;
 }
 
-static char *bson_write_object_wrapped(
+static char *M_WriteObjectWrapped(
     char *data, const char *key, const struct json_object_s *object)
 {
     assert(data);
     assert(key);
     assert(object);
-    data = bson_write_marker(data, key, '\x03');
-    data = bson_write_object(data, object);
+    data = M_WriteMarker(data, key, '\x03');
+    data = M_WriteObject(data, object);
     return data;
 }
 
-static char *bson_write_value(char *data, const struct json_value_s *value)
+static char *M_WriteValue(char *data, const struct json_value_s *value)
 {
     assert(data);
     assert(value);
     switch (value->type) {
     case json_type_array:
-        data = bson_write_array(data, (struct json_array_s *)value->payload);
+        data = M_WriteArray(data, (struct json_array_s *)value->payload);
         break;
     case json_type_object:
-        data = bson_write_object(data, (struct json_object_s *)value->payload);
+        data = M_WriteObject(data, (struct json_object_s *)value->payload);
         break;
     default:
         assert(0);
@@ -502,7 +488,7 @@ static char *bson_write_value(char *data, const struct json_value_s *value)
     return data;
 }
 
-static char *bson_write_value_wrapped(
+static char *M_WriteValueWrapped(
     char *data, const char *key, const struct json_value_s *value)
 {
     assert(data);
@@ -510,22 +496,22 @@ static char *bson_write_value_wrapped(
     assert(value);
     switch (value->type) {
     case json_type_null:
-        return bson_write_null_wrapped(data, key);
+        return M_WriteNullWrapped(data, key);
     case json_type_true:
-        return bson_write_boolean_wrapped(data, key, true);
+        return M_WriteBoolWrapped(data, key, true);
     case json_type_false:
-        return bson_write_boolean_wrapped(data, key, false);
+        return M_WriteBoolWrapped(data, key, false);
     case json_type_number:
-        return bson_write_number_wrapped(
+        return M_WriteNumberWrapped(
             data, key, (struct json_number_s *)value->payload);
     case json_type_string:
-        return bson_write_string_wrapped(
+        return M_WriteStringWrapped(
             data, key, (struct json_string_s *)value->payload);
     case json_type_array:
-        return bson_write_array_wrapped(
+        return M_WriteArrayWrapped(
             data, key, (struct json_array_s *)value->payload);
     case json_type_object:
-        return bson_write_object_wrapped(
+        return M_WriteObjectWrapped(
             data, key, (struct json_object_s *)value->payload);
     default:
         return json_null;
@@ -541,12 +527,12 @@ void *bson_write(const struct json_value_s *value, size_t *out_size)
     }
 
     size_t size = 0;
-    if (!bson_write_get_value_size(&size, value)) {
+    if (!M_GetValueSize(&size, value)) {
         return json_null;
     }
 
     char *data = Memory_Alloc(size);
-    char *data_end = bson_write_value(data, value);
+    char *data_end = M_WriteValue(data, value);
     assert((size_t)(data_end - data) == size);
 
     if (out_size != json_null) {

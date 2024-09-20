@@ -10,10 +10,10 @@ static const GLenum GL_PRIM_MODES[] = {
     GL_TRIANGLES, // GFX_3D_PRIM_TRI
 };
 
-static void GFX_3D_VertexStream_PushVertex(
+static void M_PushVertex(
     GFX_3D_VertexStream *vertex_stream, GFX_3D_Vertex *vertex);
 
-static void GFX_3D_VertexStream_PushVertex(
+static void M_PushVertex(
     GFX_3D_VertexStream *vertex_stream, GFX_3D_Vertex *vertex)
 {
     if (vertex_stream->pending_vertices.count + 1
@@ -80,14 +80,14 @@ bool GFX_3D_VertexStream_PushPrimStrip(
 
     if (count <= 2) {
         for (int i = 0; i < count; i++) {
-            GFX_3D_VertexStream_PushVertex(vertex_stream, &vertices[i]);
+            M_PushVertex(vertex_stream, &vertices[i]);
         }
     } else {
         // convert strip to raw triangles
         for (int i = 2; i < count; i++) {
-            GFX_3D_VertexStream_PushVertex(vertex_stream, &vertices[i - 2]);
-            GFX_3D_VertexStream_PushVertex(vertex_stream, &vertices[i - 1]);
-            GFX_3D_VertexStream_PushVertex(vertex_stream, &vertices[i]);
+            M_PushVertex(vertex_stream, &vertices[i - 2]);
+            M_PushVertex(vertex_stream, &vertices[i - 1]);
+            M_PushVertex(vertex_stream, &vertices[i]);
         }
     }
 
@@ -104,14 +104,14 @@ bool GFX_3D_VertexStream_PushPrimFan(
 
     if (count <= 2) {
         for (int i = 0; i < count; i++) {
-            GFX_3D_VertexStream_PushVertex(vertex_stream, &vertices[i]);
+            M_PushVertex(vertex_stream, &vertices[i]);
         }
     } else {
         // convert fan to raw triangles
         for (int i = 2; i < count; i++) {
-            GFX_3D_VertexStream_PushVertex(vertex_stream, &vertices[0]);
-            GFX_3D_VertexStream_PushVertex(vertex_stream, &vertices[i - 1]);
-            GFX_3D_VertexStream_PushVertex(vertex_stream, &vertices[i]);
+            M_PushVertex(vertex_stream, &vertices[0]);
+            M_PushVertex(vertex_stream, &vertices[i - 1]);
+            M_PushVertex(vertex_stream, &vertices[i]);
         }
     }
 
@@ -122,7 +122,7 @@ bool GFX_3D_VertexStream_PushPrimList(
     GFX_3D_VertexStream *vertex_stream, GFX_3D_Vertex *vertices, int count)
 {
     for (int i = 0; i < count; i++) {
-        GFX_3D_VertexStream_PushVertex(vertex_stream, &vertices[i]);
+        M_PushVertex(vertex_stream, &vertices[i]);
     }
     return true;
 }

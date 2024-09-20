@@ -22,53 +22,50 @@ struct bson_parse_state_s {
     size_t error;
 };
 
-static bool bson_parse_get_object_key_size(struct bson_parse_state_s *state);
-static bool bson_parse_get_null_value_size(struct bson_parse_state_s *state);
-static bool bson_parse_get_bool_value_size(struct bson_parse_state_s *state);
-static bool bson_parse_get_int32_value_size(struct bson_parse_state_s *state);
-static bool bson_parse_get_double_value_size(struct bson_parse_state_s *state);
-static bool bson_parse_get_string_value_size(struct bson_parse_state_s *state);
-static bool bson_parse_get_array_element_wrapped_size(
-    struct bson_parse_state_s *state);
-static bool bson_parse_get_array_size(struct bson_parse_state_s *state);
-static bool bson_parse_get_array_value_size(struct bson_parse_state_s *state);
-static bool bson_parse_get_object_element_wrapped_size(
-    struct bson_parse_state_s *state);
-static bool bson_parse_get_object_size(struct bson_parse_state_s *state);
-static bool bson_parse_get_object_value_size(struct bson_parse_state_s *state);
-static bool bson_parse_get_value_size(
-    struct bson_parse_state_s *state, uint8_t marker);
-static bool bson_parse_get_root_size(struct bson_parse_state_s *state);
+static bool M_GetObjectKeySize(struct bson_parse_state_s *state);
+static bool M_GetNullValueSize(struct bson_parse_state_s *state);
+static bool M_GetBoolValueSize(struct bson_parse_state_s *state);
+static bool M_GetInt32ValueSize(struct bson_parse_state_s *state);
+static bool M_GetDoubleValueSize(struct bson_parse_state_s *state);
+static bool M_GetStringValueSize(struct bson_parse_state_s *state);
+static bool M_GetArrayElementWrappedSize(struct bson_parse_state_s *state);
+static bool M_GetArraySize(struct bson_parse_state_s *state);
+static bool M_GetArrayValueSize(struct bson_parse_state_s *state);
+static bool M_GetObjectElementWrappedSize(struct bson_parse_state_s *state);
+static bool M_GetObjectSize(struct bson_parse_state_s *state);
+static bool M_GetObjectValueSize(struct bson_parse_state_s *state);
+static bool M_GetValueSize(struct bson_parse_state_s *state, uint8_t marker);
+static bool m_GetRootSize(struct bson_parse_state_s *state);
 
-static void bson_parse_object_key(
+static void M_HandleObjectKey(
     struct bson_parse_state_s *state, struct json_string_s *string);
-static void bson_parse_null_value(
+static void M_HandleNullValue(
     struct bson_parse_state_s *state, struct json_value_s *value);
-static void bson_parse_bool_value(
+static void M_HandleBoolValue(
     struct bson_parse_state_s *state, struct json_value_s *value);
-static void bson_parse_int32_value(
+static void M_HandleInt32Value(
     struct bson_parse_state_s *state, struct json_value_s *value);
-static void bson_parse_double_value(
+static void M_HandleDoubleValue(
     struct bson_parse_state_s *state, struct json_value_s *value);
-static void bson_parse_string_value(
+static void M_HandleStringValue(
     struct bson_parse_state_s *state, struct json_value_s *value);
-static void bson_parse_array_element_wrapped(
+static void M_HandleArrayElementWrapped(
     struct bson_parse_state_s *state, struct json_array_element_s *element);
-static void bson_parse_array(
+static void M_HandleArray(
     struct bson_parse_state_s *state, struct json_array_s *array);
-static void bson_parse_array_value(
+static void M_HandleArrayValue(
     struct bson_parse_state_s *state, struct json_value_s *value);
-static void bson_parse_object_element_wrapped(
+static void M_HandleObjectElementWrapped(
     struct bson_parse_state_s *state, struct json_object_element_s *element);
-static void bson_parse_object(
+static void M_HandleObject(
     struct bson_parse_state_s *state, struct json_object_s *object);
-static void bson_parse_object_value(
+static void M_HandleObjectValue(
     struct bson_parse_state_s *state, struct json_value_s *value);
-static void bson_parse_value(
+static void M_HandleValue(
     struct bson_parse_state_s *state, struct json_value_s *value,
     uint8_t marker);
 
-static bool bson_parse_get_object_key_size(struct bson_parse_state_s *state)
+static bool M_GetObjectKeySize(struct bson_parse_state_s *state)
 {
     assert(state);
     while (state->src[state->offset]) {
@@ -80,13 +77,13 @@ static bool bson_parse_get_object_key_size(struct bson_parse_state_s *state)
     return true;
 }
 
-static bool bson_parse_get_null_value_size(struct bson_parse_state_s *state)
+static bool M_GetNullValueSize(struct bson_parse_state_s *state)
 {
     assert(state);
     return true;
 }
 
-static bool bson_parse_get_bool_value_size(struct bson_parse_state_s *state)
+static bool M_GetBoolValueSize(struct bson_parse_state_s *state)
 {
     assert(state);
     if (state->offset + sizeof(uint8_t) > state->size) {
@@ -108,7 +105,7 @@ static bool bson_parse_get_bool_value_size(struct bson_parse_state_s *state)
     return true;
 }
 
-static bool bson_parse_get_int32_value_size(struct bson_parse_state_s *state)
+static bool M_GetInt32ValueSize(struct bson_parse_state_s *state)
 {
     assert(state);
 
@@ -124,7 +121,7 @@ static bool bson_parse_get_int32_value_size(struct bson_parse_state_s *state)
     return true;
 }
 
-static bool bson_parse_get_double_value_size(struct bson_parse_state_s *state)
+static bool M_GetDoubleValueSize(struct bson_parse_state_s *state)
 {
     assert(state);
 
@@ -140,7 +137,7 @@ static bool bson_parse_get_double_value_size(struct bson_parse_state_s *state)
     return true;
 }
 
-static bool bson_parse_get_string_value_size(struct bson_parse_state_s *state)
+static bool M_GetStringValueSize(struct bson_parse_state_s *state)
 {
     assert(state);
 
@@ -164,8 +161,7 @@ static bool bson_parse_get_string_value_size(struct bson_parse_state_s *state)
     return true;
 }
 
-static bool bson_parse_get_array_element_wrapped_size(
-    struct bson_parse_state_s *state)
+static bool M_GetArrayElementWrappedSize(struct bson_parse_state_s *state)
 {
     assert(state);
 
@@ -178,15 +174,15 @@ static bool bson_parse_get_array_element_wrapped_size(
 
     // BSON arrays always use keys
     state->dom_size += sizeof(struct json_string_s);
-    if (!bson_parse_get_object_key_size(state)) {
+    if (!M_GetObjectKeySize(state)) {
         return false;
     }
 
     state->dom_size += sizeof(struct json_value_s);
-    return bson_parse_get_value_size(state, marker);
+    return M_GetValueSize(state, marker);
 }
 
-static bool bson_parse_get_array_size(struct bson_parse_state_s *state)
+static bool M_GetArraySize(struct bson_parse_state_s *state)
 {
     assert(state);
 
@@ -200,7 +196,7 @@ static bool bson_parse_get_array_size(struct bson_parse_state_s *state)
 
     while (state->offset < start_offset + size - 1) {
         state->dom_size += sizeof(struct json_array_element_s);
-        if (!bson_parse_get_array_element_wrapped_size(state)) {
+        if (!M_GetArrayElementWrappedSize(state)) {
             return false;
         }
     }
@@ -217,15 +213,14 @@ static bool bson_parse_get_array_size(struct bson_parse_state_s *state)
     return true;
 }
 
-static bool bson_parse_get_array_value_size(struct bson_parse_state_s *state)
+static bool M_GetArrayValueSize(struct bson_parse_state_s *state)
 {
     assert(state);
     state->dom_size += sizeof(struct json_array_s);
-    return bson_parse_get_array_size(state);
+    return M_GetArraySize(state);
 }
 
-static bool bson_parse_get_object_element_wrapped_size(
-    struct bson_parse_state_s *state)
+static bool M_GetObjectElementWrappedSize(struct bson_parse_state_s *state)
 {
     assert(state);
 
@@ -237,15 +232,15 @@ static bool bson_parse_get_object_element_wrapped_size(
     state->offset++;
 
     state->dom_size += sizeof(struct json_string_s);
-    if (!bson_parse_get_object_key_size(state)) {
+    if (!M_GetObjectKeySize(state)) {
         return false;
     }
 
     state->dom_size += sizeof(struct json_value_s);
-    return bson_parse_get_value_size(state, marker);
+    return M_GetValueSize(state, marker);
 }
 
-static bool bson_parse_get_object_size(struct bson_parse_state_s *state)
+static bool M_GetObjectSize(struct bson_parse_state_s *state)
 {
     assert(state);
 
@@ -259,7 +254,7 @@ static bool bson_parse_get_object_size(struct bson_parse_state_s *state)
 
     while (state->offset < start_offset + size - 1) {
         state->dom_size += sizeof(struct json_object_element_s);
-        if (!bson_parse_get_object_element_wrapped_size(state)) {
+        if (!M_GetObjectElementWrappedSize(state)) {
             return false;
         }
     }
@@ -276,46 +271,45 @@ static bool bson_parse_get_object_size(struct bson_parse_state_s *state)
     return true;
 }
 
-static bool bson_parse_get_object_value_size(struct bson_parse_state_s *state)
+static bool M_GetObjectValueSize(struct bson_parse_state_s *state)
 {
     assert(state);
     state->dom_size += sizeof(struct json_object_s);
-    return bson_parse_get_object_size(state);
+    return M_GetObjectSize(state);
 }
 
-static bool bson_parse_get_value_size(
-    struct bson_parse_state_s *state, uint8_t marker)
+static bool M_GetValueSize(struct bson_parse_state_s *state, uint8_t marker)
 {
     assert(state);
     switch (marker) {
     case 0x01:
-        return bson_parse_get_double_value_size(state);
+        return M_GetDoubleValueSize(state);
     case 0x02:
-        return bson_parse_get_string_value_size(state);
+        return M_GetStringValueSize(state);
     case 0x03:
-        return bson_parse_get_object_value_size(state);
+        return M_GetObjectValueSize(state);
     case 0x04:
-        return bson_parse_get_array_value_size(state);
+        return M_GetArrayValueSize(state);
     case 0x0A:
-        return bson_parse_get_null_value_size(state);
+        return M_GetNullValueSize(state);
     case 0x08:
-        return bson_parse_get_bool_value_size(state);
+        return M_GetBoolValueSize(state);
     case 0x10:
-        return bson_parse_get_int32_value_size(state);
+        return M_GetInt32ValueSize(state);
     default:
         state->error = bson_parse_error_invalid_value;
         return false;
     }
 }
 
-static bool bson_parse_get_root_size(struct bson_parse_state_s *state)
+static bool m_GetRootSize(struct bson_parse_state_s *state)
 {
     // assume the root element to be an object
     state->dom_size += sizeof(struct json_value_s);
-    return bson_parse_get_object_value_size(state);
+    return M_GetObjectValueSize(state);
 }
 
-static void bson_parse_object_key(
+static void M_HandleObjectKey(
     struct bson_parse_state_s *state, struct json_string_s *string)
 {
     assert(state);
@@ -331,7 +325,7 @@ static void bson_parse_object_key(
     state->data += size;
 }
 
-static void bson_parse_null_value(
+static void M_HandleNullValue(
     struct bson_parse_state_s *state, struct json_value_s *value)
 {
     assert(state);
@@ -340,7 +334,7 @@ static void bson_parse_null_value(
     value->payload = json_null;
 }
 
-static void bson_parse_bool_value(
+static void M_HandleBoolValue(
     struct bson_parse_state_s *state, struct json_value_s *value)
 {
     assert(state);
@@ -361,7 +355,7 @@ static void bson_parse_bool_value(
     state->offset++;
 }
 
-static void bson_parse_int32_value(
+static void M_HandleInt32Value(
     struct bson_parse_state_s *state, struct json_value_s *value)
 {
     assert(state);
@@ -384,7 +378,7 @@ static void bson_parse_int32_value(
     value->payload = number;
 }
 
-static void bson_parse_double_value(
+static void M_HandleDoubleValue(
     struct bson_parse_state_s *state, struct json_value_s *value)
 {
     assert(state);
@@ -416,7 +410,7 @@ static void bson_parse_double_value(
     value->payload = number;
 }
 
-static void bson_parse_string_value(
+static void M_HandleStringValue(
     struct bson_parse_state_s *state, struct json_value_s *value)
 {
     assert(state);
@@ -441,7 +435,7 @@ static void bson_parse_string_value(
     value->payload = string;
 }
 
-static void bson_parse_array_element_wrapped(
+static void M_HandleArrayElementWrapped(
     struct bson_parse_state_s *state, struct json_array_element_s *element)
 {
     assert(state);
@@ -455,7 +449,7 @@ static void bson_parse_array_element_wrapped(
     struct json_string_s *key = (struct json_string_s *)state->dom;
     key->ref_count = 1;
     state->dom += sizeof(struct json_string_s);
-    bson_parse_object_key(state, key);
+    M_HandleObjectKey(state, key);
 
     struct json_value_s *value = (struct json_value_s *)state->dom;
     value->ref_count = 1;
@@ -463,10 +457,10 @@ static void bson_parse_array_element_wrapped(
 
     element->value = value;
 
-    bson_parse_value(state, value, marker);
+    M_HandleValue(state, value, marker);
 }
 
-static void bson_parse_array(
+static void M_HandleArray(
     struct bson_parse_state_s *state, struct json_array_s *array)
 {
     assert(state);
@@ -490,7 +484,7 @@ static void bson_parse_array(
             previous->next = element;
         }
         previous = element;
-        bson_parse_array_element_wrapped(state, element);
+        M_HandleArrayElementWrapped(state, element);
         count++;
     }
     if (previous) {
@@ -506,7 +500,7 @@ static void bson_parse_array(
     state->offset++;
 }
 
-static void bson_parse_array_value(
+static void M_HandleArrayValue(
     struct bson_parse_state_s *state, struct json_value_s *value)
 {
     assert(state);
@@ -516,13 +510,13 @@ static void bson_parse_array_value(
     array->ref_count = 1;
     state->dom += sizeof(struct json_array_s);
 
-    bson_parse_array(state, array);
+    M_HandleArray(state, array);
 
     value->type = json_type_array;
     value->payload = array;
 }
 
-static void bson_parse_object_element_wrapped(
+static void M_HandleObjectElementWrapped(
     struct bson_parse_state_s *state, struct json_object_element_s *element)
 {
     assert(state);
@@ -535,7 +529,7 @@ static void bson_parse_object_element_wrapped(
     struct json_string_s *key = (struct json_string_s *)state->dom;
     key->ref_count = 1;
     state->dom += sizeof(struct json_string_s);
-    bson_parse_object_key(state, key);
+    M_HandleObjectKey(state, key);
 
     struct json_value_s *value = (struct json_value_s *)state->dom;
     value->ref_count = 1;
@@ -544,10 +538,10 @@ static void bson_parse_object_element_wrapped(
     element->name = key;
     element->value = value;
 
-    bson_parse_value(state, value, marker);
+    M_HandleValue(state, value, marker);
 }
 
-static void bson_parse_object(
+static void M_HandleObject(
     struct bson_parse_state_s *state, struct json_object_s *object)
 {
     assert(state);
@@ -571,7 +565,7 @@ static void bson_parse_object(
             previous->next = element;
         }
         previous = element;
-        bson_parse_object_element_wrapped(state, element);
+        M_HandleObjectElementWrapped(state, element);
         count++;
     }
     if (previous) {
@@ -587,7 +581,7 @@ static void bson_parse_object(
     state->offset++;
 }
 
-static void bson_parse_object_value(
+static void M_HandleObjectValue(
     struct bson_parse_state_s *state, struct json_value_s *value)
 {
     assert(state);
@@ -597,13 +591,13 @@ static void bson_parse_object_value(
     object->ref_count = 1;
     state->dom += sizeof(struct json_object_s);
 
-    bson_parse_object(state, object);
+    M_HandleObject(state, object);
 
     value->type = json_type_object;
     value->payload = object;
 }
 
-static void bson_parse_value(
+static void M_HandleValue(
     struct bson_parse_state_s *state, struct json_value_s *value,
     uint8_t marker)
 {
@@ -611,25 +605,25 @@ static void bson_parse_value(
     assert(value);
     switch (marker) {
     case 0x01:
-        bson_parse_double_value(state, value);
+        M_HandleDoubleValue(state, value);
         break;
     case 0x02:
-        bson_parse_string_value(state, value);
+        M_HandleStringValue(state, value);
         break;
     case 0x03:
-        bson_parse_object_value(state, value);
+        M_HandleObjectValue(state, value);
         break;
     case 0x04:
-        bson_parse_array_value(state, value);
+        M_HandleArrayValue(state, value);
         break;
     case 0x0A:
-        bson_parse_null_value(state, value);
+        M_HandleNullValue(state, value);
         break;
     case 0x08:
-        bson_parse_bool_value(state, value);
+        M_HandleBoolValue(state, value);
         break;
     case 0x10:
-        bson_parse_int32_value(state, value);
+        M_HandleInt32Value(state, value);
         break;
     default:
         assert(0);
@@ -665,7 +659,7 @@ struct json_value_s *bson_parse_ex(
     state.dom_size = 0;
     state.data_size = 0;
 
-    if (bson_parse_get_root_size(&state)) {
+    if (m_GetRootSize(&state)) {
         if (state.offset != state.size) {
             state.error = bson_parse_error_unexpected_trailing_bytes;
         }
@@ -693,7 +687,7 @@ struct json_value_s *bson_parse_ex(
     value = (struct json_value_s *)state.dom;
     value->ref_count = 0;
     state.dom += sizeof(struct json_value_s);
-    bson_parse_object_value(&state, value);
+    M_HandleObjectValue(&state, value);
 
     assert(state.dom == allocation + state.dom_size);
     assert(state.data == allocation + state.dom_size + state.data_size);
