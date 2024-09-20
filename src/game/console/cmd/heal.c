@@ -1,4 +1,4 @@
-#include "game/console/commands/heal.h"
+#include "game/console/cmd/heal.h"
 
 #include "game/game.h"
 #include "game/game_string.h"

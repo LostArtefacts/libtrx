@@ -1,5 +1,5 @@
 
-#include "game/console/commands/pos.h"
+#include "game/console/cmd/pos.h"
 #include "game/console/common.h"
 #include "game/game.h"
 #include "game/game_string.h"

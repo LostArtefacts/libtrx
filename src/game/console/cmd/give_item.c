@@ -1,4 +1,4 @@
-#include "game/console/commands/give_item.h"
+#include "game/console/cmd/give_item.h"
 
 #include "game/backpack.h"
 #include "game/game.h"

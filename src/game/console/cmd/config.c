@@ -1,4 +1,4 @@
-#include "game/console/commands/config.h"
+#include "game/console/cmd/config.h"
 
 #include "config/config.h"
 #include "config/config_map.h"
