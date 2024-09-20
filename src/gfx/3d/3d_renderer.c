@@ -7,11 +7,9 @@
 #include <assert.h>
 #include <stddef.h>
 
-static void GFX_3D_Renderer_SelectTextureImpl(
-    GFX_3D_Renderer *renderer, int texture_num);
+static void M_SelectTextureImpl(GFX_3D_Renderer *renderer, int texture_num);
 
-static void GFX_3D_Renderer_SelectTextureImpl(
-    GFX_3D_Renderer *renderer, int texture_num)
+static void M_SelectTextureImpl(GFX_3D_Renderer *renderer, int texture_num)
 {
     assert(renderer);
 
@@ -189,7 +187,7 @@ bool GFX_3D_Renderer_UnregisterEnvironmentMap(
 
     // unbind texture if currently bound
     if (renderer->selected_texture_num == texture_num) {
-        GFX_3D_Renderer_SelectTextureImpl(renderer, GFX_NO_TEXTURE);
+        M_SelectTextureImpl(renderer, GFX_NO_TEXTURE);
         renderer->selected_texture_num = GFX_NO_TEXTURE;
     }
 
@@ -248,7 +246,7 @@ bool GFX_3D_Renderer_UnregisterTexturePage(
 
     // unbind texture if currently bound
     if (texture_num == renderer->selected_texture_num) {
-        GFX_3D_Renderer_SelectTextureImpl(renderer, GFX_NO_TEXTURE);
+        M_SelectTextureImpl(renderer, GFX_NO_TEXTURE);
         renderer->selected_texture_num = GFX_NO_TEXTURE;
     }
 
@@ -287,13 +285,13 @@ void GFX_3D_Renderer_SelectTexture(GFX_3D_Renderer *renderer, int texture_num)
     assert(renderer);
     GFX_3D_VertexStream_RenderPending(&renderer->vertex_stream);
     renderer->selected_texture_num = texture_num;
-    GFX_3D_Renderer_SelectTextureImpl(renderer, texture_num);
+    M_SelectTextureImpl(renderer, texture_num);
 }
 
 void GFX_3D_Renderer_RestoreTexture(GFX_3D_Renderer *renderer)
 {
     assert(renderer);
-    GFX_3D_Renderer_SelectTextureImpl(renderer, renderer->selected_texture_num);
+    M_SelectTextureImpl(renderer, renderer->selected_texture_num);
 }
 
 void GFX_3D_Renderer_SetPrimType(

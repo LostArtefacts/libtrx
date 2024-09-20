@@ -6,9 +6,9 @@
 #include "game/lara/common.h"
 #include "game/objects/common.h"
 
-static COMMAND_RESULT Console_Cmd_Pos(const char *args);
+static COMMAND_RESULT M_Entrypoint(const char *args);
 
-static COMMAND_RESULT Console_Cmd_Pos(const char *const args)
+static COMMAND_RESULT M_Entrypoint(const char *const args)
 {
     const OBJECT_INFO *const object = Object_GetObject(O_LARA);
     if (!object->loaded) {
@@ -34,5 +34,5 @@ static COMMAND_RESULT Console_Cmd_Pos(const char *const args)
 
 CONSOLE_COMMAND g_Console_Cmd_Pos = {
     .prefix = "pos",
-    .proc = Console_Cmd_Pos,
+    .proc = M_Entrypoint,
 };

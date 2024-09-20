@@ -6,18 +6,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void Log_ErrorCallback(void *data, const char *msg, int errnum);
-static int Log_StackTrace(
+static void M_ErrorCallback(void *data, const char *msg, int errnum);
+static int M_StackTrace(
     void *data, uintptr_t pc, const char *filename, int lineno,
     const char *func_name);
-static void Log_SignalHandler(int sig);
+static void M_SignalHandler(int sig);
 
-static void Log_ErrorCallback(void *data, const char *msg, int errnum)
+static void M_ErrorCallback(void *data, const char *msg, int errnum)
 {
     LOG_ERROR("%s", msg);
 }
 
-static int Log_StackTrace(
+static int M_StackTrace(
     void *data, uintptr_t pc, const char *filename, int lineno,
     const char *func_name)
 {
@@ -31,21 +31,21 @@ static int Log_StackTrace(
     return 0;
 }
 
-static void Log_SignalHandler(int sig)
+static void M_SignalHandler(int sig)
 {
     LOG_ERROR("== CRASH REPORT ==");
     LOG_INFO("SIGNAL: %d", sig);
     LOG_INFO("STACK TRACE:");
     struct backtrace_state *state = backtrace_create_state(
-        NULL, BACKTRACE_SUPPORTS_THREADS, Log_ErrorCallback, NULL);
-    backtrace_full(state, 0, Log_StackTrace, Log_ErrorCallback, NULL);
+        NULL, BACKTRACE_SUPPORTS_THREADS, M_ErrorCallback, NULL);
+    backtrace_full(state, 0, M_StackTrace, M_ErrorCallback, NULL);
     exit(EXIT_FAILURE);
 }
 
 void Log_Init_Extra(const char *path)
 {
-    signal(SIGSEGV, Log_SignalHandler);
-    signal(SIGFPE, Log_SignalHandler);
+    signal(SIGSEGV, M_SignalHandler);
+    signal(SIGFPE, M_SignalHandler);
 }
 
 void Log_Shutdown_Extra(void)

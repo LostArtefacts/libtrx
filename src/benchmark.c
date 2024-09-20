@@ -5,7 +5,7 @@
 
 #include <SDL2/SDL_timer.h>
 
-static void Benchmark_Log(
+static void M_Log(
     BENCHMARK *const b, const char *file, int32_t line, const char *func,
     Uint64 current, const char *message)
 {
@@ -49,7 +49,7 @@ void Benchmark_Tick_Impl(
     const char *const func, const char *const message)
 {
     const Uint64 current = SDL_GetPerformanceCounter();
-    Benchmark_Log(b, file, line, func, current, message);
+    M_Log(b, file, line, func, current, message);
     b->last = current;
 }
 

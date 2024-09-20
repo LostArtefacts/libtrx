@@ -32,17 +32,16 @@ typedef struct {
     GFX_GL_Program program;
 } GFX_Renderer_FBO_Context;
 
-static void GFX_Renderer_FBO_SwapBuffers(GFX_Renderer *renderer);
-static void GFX_Renderer_FBO_Init(
-    GFX_Renderer *renderer, const GFX_CONFIG *config);
-static void GFX_Renderer_FBO_Shutdown(GFX_Renderer *renderer);
-static void GFX_Renderer_FBO_Reset(GFX_Renderer *renderer);
+static void M_SwapBuffers(GFX_Renderer *renderer);
+static void M_Init(GFX_Renderer *renderer, const GFX_CONFIG *config);
+static void M_Shutdown(GFX_Renderer *renderer);
+static void M_Reset(GFX_Renderer *renderer);
 
-static void GFX_Renderer_FBO_Render(GFX_Renderer *renderer);
-static void GFX_Renderer_FBO_Bind(const GFX_Renderer *renderer);
-static void GFX_Renderer_FBO_Unbind(const GFX_Renderer *renderer);
+static void M_Render(GFX_Renderer *renderer);
+static void M_Bind(const GFX_Renderer *renderer);
+static void M_Unbind(const GFX_Renderer *renderer);
 
-static void GFX_Renderer_FBO_SwapBuffers(GFX_Renderer *renderer)
+static void M_SwapBuffers(GFX_Renderer *renderer)
 {
     if (GFX_Context_GetScheduledScreenshotPath()) {
         GFX_Screenshot_CaptureToFile(GFX_Context_GetScheduledScreenshotPath());
@@ -50,21 +49,20 @@ static void GFX_Renderer_FBO_SwapBuffers(GFX_Renderer *renderer)
     }
 
     GFX_Context_SwitchToWindowViewportAR();
-    GFX_Renderer_FBO_Render(renderer);
+    M_Render(renderer);
 
     SDL_GL_SwapWindow(GFX_Context_GetWindowHandle());
 
     GFX_Context_SwitchToWindowViewport();
-    GFX_Renderer_FBO_Unbind(renderer);
+    M_Unbind(renderer);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     GFX_GL_CheckError();
 
-    GFX_Renderer_FBO_Bind(renderer);
+    M_Bind(renderer);
     GFX_Context_SwitchToDisplayViewport();
 }
 
-static void GFX_Renderer_FBO_Init(
-    GFX_Renderer *const renderer, const GFX_CONFIG *const config)
+static void M_Init(GFX_Renderer *const renderer, const GFX_CONFIG *const config)
 {
     LOG_INFO("");
 
@@ -146,7 +144,7 @@ static void GFX_Renderer_FBO_Init(
     }
 }
 
-static void GFX_Renderer_FBO_Shutdown(GFX_Renderer *renderer)
+static void M_Shutdown(GFX_Renderer *renderer)
 {
     LOG_INFO("");
 
@@ -169,7 +167,7 @@ static void GFX_Renderer_FBO_Shutdown(GFX_Renderer *renderer)
     Memory_FreePointer(&renderer->priv);
 }
 
-static void GFX_Renderer_FBO_Reset(GFX_Renderer *renderer)
+static void M_Reset(GFX_Renderer *renderer)
 {
     GFX_Renderer_FBO_Context *const priv = renderer->priv;
     const GFX_CONFIG *const config = priv->config;
@@ -178,7 +176,7 @@ static void GFX_Renderer_FBO_Reset(GFX_Renderer *renderer)
     renderer->init(renderer, config);
 }
 
-static void GFX_Renderer_FBO_Render(GFX_Renderer *renderer)
+static void M_Render(GFX_Renderer *renderer)
 {
     assert(renderer != NULL);
     GFX_Renderer_FBO_Context *priv = renderer->priv;
@@ -227,7 +225,7 @@ static void GFX_Renderer_FBO_Render(GFX_Renderer *renderer)
     GFX_GL_CheckError();
 }
 
-static void GFX_Renderer_FBO_Bind(const GFX_Renderer *renderer)
+static void M_Bind(const GFX_Renderer *renderer)
 {
     assert(renderer != NULL);
     GFX_Renderer_FBO_Context *priv = renderer->priv;
@@ -235,14 +233,14 @@ static void GFX_Renderer_FBO_Bind(const GFX_Renderer *renderer)
     glBindFramebuffer(GL_FRAMEBUFFER, priv->fbo);
 }
 
-static void GFX_Renderer_FBO_Unbind(const GFX_Renderer *renderer)
+static void M_Unbind(const GFX_Renderer *renderer)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 GFX_Renderer g_GFX_Renderer_FBO = {
-    .swap_buffers = &GFX_Renderer_FBO_SwapBuffers,
-    .init = &GFX_Renderer_FBO_Init,
-    .shutdown = &GFX_Renderer_FBO_Shutdown,
-    .reset = &GFX_Renderer_FBO_Reset,
+    .swap_buffers = &M_SwapBuffers,
+    .init = &M_Init,
+    .shutdown = &M_Shutdown,
+    .reset = &M_Reset,
 };

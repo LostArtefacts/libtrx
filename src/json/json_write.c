@@ -2,45 +2,42 @@
 
 #include "memory.h"
 
-static int json_write_minified_get_value_size(
+static int M_GetValueSize_Minified(
     const struct json_value_s *value, size_t *size);
-static int json_write_get_number_size(
-    const struct json_number_s *number, size_t *size);
-static int json_write_get_string_size(
-    const struct json_string_s *string, size_t *size);
-static int json_write_minified_get_array_size(
+static int M_GetNumberSize(const struct json_number_s *number, size_t *size);
+static int M_GetStringSize(const struct json_string_s *string, size_t *size);
+static int M_GetArraySize_Minified(
     const struct json_array_s *array, size_t *size);
-static int json_write_minified_get_object_size(
+static int M_GetObjectSize_Minified(
     const struct json_object_s *object, size_t *size);
-static char *json_write_minified_value(
+static char *M_WriteValue_Minified(
     const struct json_value_s *value, char *data);
-static char *json_write_number(const struct json_number_s *number, char *data);
-static char *json_write_string(const struct json_string_s *string, char *data);
-static char *json_write_minified_array(
+static char *M_WriteNumber(const struct json_number_s *number, char *data);
+static char *M_WriteString(const struct json_string_s *string, char *data);
+static char *M_WriteArray_Minified(
     const struct json_array_s *array, char *data);
-static char *json_write_minified_object(
+static char *M_WriteObject_Minified(
     const struct json_object_s *object, char *data);
-static int json_write_pretty_get_value_size(
+static int M_GetValueSize_Pretty(
     const struct json_value_s *value, size_t depth, size_t indent_size,
     size_t newline_size, size_t *size);
-static int json_write_pretty_get_array_size(
+static int M_GetArraySize_Pretty(
     const struct json_array_s *array, size_t depth, size_t indent_size,
     size_t newline_size, size_t *size);
-static int json_write_pretty_get_object_size(
+static int M_GetObjectSize_Pretty(
     const struct json_object_s *object, size_t depth, size_t indent_size,
     size_t newline_size, size_t *size);
-static char *json_write_pretty_value(
+static char *M_WriteValue_Pretty(
     const struct json_value_s *value, size_t depth, const char *indent,
     const char *newline, char *data);
-static char *json_write_pretty_array(
+static char *M_WriteArray_Pretty(
     const struct json_array_s *array, size_t depth, const char *indent,
     const char *newline, char *data);
-static char *json_write_pretty_object(
+static char *M_WriteObject_Pretty(
     const struct json_object_s *object, size_t depth, const char *indent,
     const char *newline, char *data);
 
-static int json_write_get_number_size(
-    const struct json_number_s *number, size_t *size)
+static int M_GetNumberSize(const struct json_number_s *number, size_t *size)
 {
     json_uintmax_t parsed_number;
     size_t i;
@@ -162,8 +159,7 @@ cleanup:
     return 0;
 }
 
-static int json_write_get_string_size(
-    const struct json_string_s *string, size_t *size)
+static int M_GetStringSize(const struct json_string_s *string, size_t *size)
 {
     size_t i;
     for (i = 0; i < string->string_size; i++) {
@@ -188,7 +184,7 @@ static int json_write_get_string_size(
     return 0;
 }
 
-static int json_write_minified_get_array_size(
+static int M_GetArraySize_Minified(
     const struct json_array_s *array, size_t *size)
 {
     struct json_array_element_s *element;
@@ -201,7 +197,7 @@ static int json_write_minified_get_array_size(
 
     for (element = array->start; json_null != element;
          element = element->next) {
-        if (json_write_minified_get_value_size(element->value, size)) {
+        if (M_GetValueSize_Minified(element->value, size)) {
             /* value was malformed! */
             return 1;
         }
@@ -210,7 +206,7 @@ static int json_write_minified_get_array_size(
     return 0;
 }
 
-static int json_write_minified_get_object_size(
+static int M_GetObjectSize_Minified(
     const struct json_object_s *object, size_t *size)
 {
     struct json_object_element_s *element;
@@ -225,12 +221,12 @@ static int json_write_minified_get_object_size(
 
     for (element = object->start; json_null != element;
          element = element->next) {
-        if (json_write_get_string_size(element->name, size)) {
+        if (M_GetStringSize(element->name, size)) {
             /* string was malformed! */
             return 1;
         }
 
-        if (json_write_minified_get_value_size(element->value, size)) {
+        if (M_GetValueSize_Minified(element->value, size)) {
             /* value was malformed! */
             return 1;
         }
@@ -239,7 +235,7 @@ static int json_write_minified_get_object_size(
     return 0;
 }
 
-static int json_write_minified_get_value_size(
+static int M_GetValueSize_Minified(
     const struct json_value_s *value, size_t *size)
 {
     switch (value->type) {
@@ -247,16 +243,14 @@ static int json_write_minified_get_value_size(
         /* unknown value type found! */
         return 1;
     case json_type_number:
-        return json_write_get_number_size(
-            (struct json_number_s *)value->payload, size);
+        return M_GetNumberSize((struct json_number_s *)value->payload, size);
     case json_type_string:
-        return json_write_get_string_size(
-            (struct json_string_s *)value->payload, size);
+        return M_GetStringSize((struct json_string_s *)value->payload, size);
     case json_type_array:
-        return json_write_minified_get_array_size(
+        return M_GetArraySize_Minified(
             (struct json_array_s *)value->payload, size);
     case json_type_object:
-        return json_write_minified_get_object_size(
+        return M_GetObjectSize_Minified(
             (struct json_object_s *)value->payload, size);
     case json_type_true:
         *size += 4; /* the string "true". */
@@ -270,7 +264,7 @@ static int json_write_minified_get_value_size(
     }
 }
 
-static char *json_write_number(const struct json_number_s *number, char *data)
+static char *M_WriteNumber(const struct json_number_s *number, char *data)
 {
     json_uintmax_t parsed_number, backup;
     size_t i;
@@ -455,7 +449,7 @@ static char *json_write_number(const struct json_number_s *number, char *data)
     return data;
 }
 
-static char *json_write_string(const struct json_string_s *string, char *data)
+static char *M_WriteString(const struct json_string_s *string, char *data)
 {
     size_t i;
 
@@ -502,8 +496,7 @@ static char *json_write_string(const struct json_string_s *string, char *data)
     return data;
 }
 
-static char *json_write_minified_array(
-    const struct json_array_s *array, char *data)
+static char *M_WriteArray_Minified(const struct json_array_s *array, char *data)
 {
     struct json_array_element_s *element = json_null;
 
@@ -515,7 +508,7 @@ static char *json_write_minified_array(
             *data++ = ','; /* ','s seperate each element. */
         }
 
-        data = json_write_minified_value(element->value, data);
+        data = M_WriteValue_Minified(element->value, data);
 
         if (json_null == data) {
             /* value was malformed! */
@@ -528,7 +521,7 @@ static char *json_write_minified_array(
     return data;
 }
 
-static char *json_write_minified_object(
+static char *M_WriteObject_Minified(
     const struct json_object_s *object, char *data)
 {
     struct json_object_element_s *element = json_null;
@@ -541,7 +534,7 @@ static char *json_write_minified_object(
             *data++ = ','; /* ','s seperate each element. */
         }
 
-        data = json_write_string(element->name, data);
+        data = M_WriteString(element->name, data);
 
         if (json_null == data) {
             /* string was malformed! */
@@ -550,7 +543,7 @@ static char *json_write_minified_object(
 
         *data++ = ':'; /* ':'s seperate each name/value pair. */
 
-        data = json_write_minified_value(element->value, data);
+        data = M_WriteValue_Minified(element->value, data);
 
         if (json_null == data) {
             /* value was malformed! */
@@ -563,22 +556,21 @@ static char *json_write_minified_object(
     return data;
 }
 
-static char *json_write_minified_value(
-    const struct json_value_s *value, char *data)
+static char *M_WriteValue_Minified(const struct json_value_s *value, char *data)
 {
     switch (value->type) {
     default:
         /* unknown value type found! */
         return json_null;
     case json_type_number:
-        return json_write_number((struct json_number_s *)value->payload, data);
+        return M_WriteNumber((struct json_number_s *)value->payload, data);
     case json_type_string:
-        return json_write_string((struct json_string_s *)value->payload, data);
+        return M_WriteString((struct json_string_s *)value->payload, data);
     case json_type_array:
-        return json_write_minified_array(
+        return M_WriteArray_Minified(
             (struct json_array_s *)value->payload, data);
     case json_type_object:
-        return json_write_minified_object(
+        return M_WriteObject_Minified(
             (struct json_object_s *)value->payload, data);
     case json_type_true:
         data[0] = 't';
@@ -612,7 +604,7 @@ void *json_write_minified(const struct json_value_s *value, size_t *out_size)
         return json_null;
     }
 
-    if (json_write_minified_get_value_size(value, &size)) {
+    if (M_GetValueSize_Minified(value, &size)) {
         /* value was malformed! */
         return json_null;
     }
@@ -626,7 +618,7 @@ void *json_write_minified(const struct json_value_s *value, size_t *out_size)
         return json_null;
     }
 
-    data_end = json_write_minified_value(value, data);
+    data_end = M_WriteValue_Minified(value, data);
 
     if (json_null == data_end) {
         /* bad chi occurred! */
@@ -644,7 +636,7 @@ void *json_write_minified(const struct json_value_s *value, size_t *out_size)
     return data;
 }
 
-static int json_write_pretty_get_array_size(
+static int M_GetArraySize_Pretty(
     const struct json_array_s *array, size_t depth, size_t indent_size,
     size_t newline_size, size_t *size)
 {
@@ -663,7 +655,7 @@ static int json_write_pretty_get_array_size(
             /* each element gets an indent. */
             *size += (depth + 1) * indent_size;
 
-            if (json_write_pretty_get_value_size(
+            if (M_GetValueSize_Pretty(
                     element->value, depth + 1, indent_size, newline_size,
                     size)) {
                 /* value was malformed! */
@@ -686,7 +678,7 @@ static int json_write_pretty_get_array_size(
     return 0;
 }
 
-static int json_write_pretty_get_object_size(
+static int M_GetObjectSize_Pretty(
     const struct json_object_s *object, size_t depth, size_t indent_size,
     size_t newline_size, size_t *size)
 {
@@ -705,14 +697,14 @@ static int json_write_pretty_get_object_size(
             *size += (depth + 1) * indent_size;
             *size += newline_size;
 
-            if (json_write_get_string_size(element->name, size)) {
+            if (M_GetStringSize(element->name, size)) {
                 /* string was malformed! */
                 return 1;
             }
 
             *size += 3; /* seperate each name/value pair with " : ". */
 
-            if (json_write_pretty_get_value_size(
+            if (M_GetValueSize_Pretty(
                     element->value, depth + 1, indent_size, newline_size,
                     size)) {
                 /* value was malformed! */
@@ -728,7 +720,7 @@ static int json_write_pretty_get_object_size(
     return 0;
 }
 
-static int json_write_pretty_get_value_size(
+static int M_GetValueSize_Pretty(
     const struct json_value_s *value, size_t depth, size_t indent_size,
     size_t newline_size, size_t *size)
 {
@@ -737,17 +729,15 @@ static int json_write_pretty_get_value_size(
         /* unknown value type found! */
         return 1;
     case json_type_number:
-        return json_write_get_number_size(
-            (struct json_number_s *)value->payload, size);
+        return M_GetNumberSize((struct json_number_s *)value->payload, size);
     case json_type_string:
-        return json_write_get_string_size(
-            (struct json_string_s *)value->payload, size);
+        return M_GetStringSize((struct json_string_s *)value->payload, size);
     case json_type_array:
-        return json_write_pretty_get_array_size(
+        return M_GetArraySize_Pretty(
             (struct json_array_s *)value->payload, depth, indent_size,
             newline_size, size);
     case json_type_object:
-        return json_write_pretty_get_object_size(
+        return M_GetObjectSize_Pretty(
             (struct json_object_s *)value->payload, depth, indent_size,
             newline_size, size);
     case json_type_true:
@@ -762,7 +752,7 @@ static int json_write_pretty_get_value_size(
     }
 }
 
-static char *json_write_pretty_array(
+static char *M_WriteArray_Pretty(
     const struct json_array_s *array, size_t depth, const char *indent,
     const char *newline, char *data)
 {
@@ -792,7 +782,7 @@ static char *json_write_pretty_array(
                 }
             }
 
-            data = json_write_pretty_value(
+            data = M_WriteValue_Pretty(
                 element->value, depth + 1, indent, newline, data);
 
             if (json_null == data) {
@@ -817,7 +807,7 @@ static char *json_write_pretty_array(
     return data;
 }
 
-static char *json_write_pretty_object(
+static char *M_WriteObject_Pretty(
     const struct json_object_s *object, size_t depth, const char *indent,
     const char *newline, char *data)
 {
@@ -847,7 +837,7 @@ static char *json_write_pretty_object(
                 }
             }
 
-            data = json_write_string(element->name, data);
+            data = M_WriteString(element->name, data);
 
             if (json_null == data) {
                 /* string was malformed! */
@@ -859,7 +849,7 @@ static char *json_write_pretty_object(
             *data++ = ':';
             *data++ = ' ';
 
-            data = json_write_pretty_value(
+            data = M_WriteValue_Pretty(
                 element->value, depth + 1, indent, newline, data);
 
             if (json_null == data) {
@@ -884,7 +874,7 @@ static char *json_write_pretty_object(
     return data;
 }
 
-static char *json_write_pretty_value(
+static char *M_WriteValue_Pretty(
     const struct json_value_s *value, size_t depth, const char *indent,
     const char *newline, char *data)
 {
@@ -893,15 +883,15 @@ static char *json_write_pretty_value(
         /* unknown value type found! */
         return json_null;
     case json_type_number:
-        return json_write_number((struct json_number_s *)value->payload, data);
+        return M_WriteNumber((struct json_number_s *)value->payload, data);
     case json_type_string:
-        return json_write_string((struct json_string_s *)value->payload, data);
+        return M_WriteString((struct json_string_s *)value->payload, data);
     case json_type_array:
-        return json_write_pretty_array(
+        return M_WriteArray_Pretty(
             (struct json_array_s *)value->payload, depth, indent, newline,
             data);
     case json_type_object:
-        return json_write_pretty_object(
+        return M_WriteObject_Pretty(
             (struct json_object_s *)value->payload, depth, indent, newline,
             data);
     case json_type_true:
@@ -956,8 +946,7 @@ void *json_write_pretty(
         ++newline_size; /* skip non-null terminating characters. */
     }
 
-    if (json_write_pretty_get_value_size(
-            value, 0, indent_size, newline_size, &size)) {
+    if (M_GetValueSize_Pretty(value, 0, indent_size, newline_size, &size)) {
         /* value was malformed! */
         return json_null;
     }
@@ -971,7 +960,7 @@ void *json_write_pretty(
         return json_null;
     }
 
-    data_end = json_write_pretty_value(value, 0, indent, newline, data);
+    data_end = M_WriteValue_Pretty(value, 0, indent, newline, data);
 
     if (json_null == data_end) {
         /* bad chi occurred! */

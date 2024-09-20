@@ -7,9 +7,9 @@
 #include <SDL2/SDL_video.h>
 #include <assert.h>
 
-static void GFX_Renderer_Legacy_SwapBuffers(GFX_Renderer *renderer);
+static void M_SwapBuffers(GFX_Renderer *renderer);
 
-static void GFX_Renderer_Legacy_SwapBuffers(GFX_Renderer *renderer)
+static void M_SwapBuffers(GFX_Renderer *renderer)
 {
     assert(renderer != NULL);
 
@@ -28,7 +28,7 @@ static void GFX_Renderer_Legacy_SwapBuffers(GFX_Renderer *renderer)
 
 GFX_Renderer g_GFX_Renderer_Legacy = {
     .priv = NULL,
-    .swap_buffers = &GFX_Renderer_Legacy_SwapBuffers,
+    .swap_buffers = &M_SwapBuffers,
     .init = NULL,
     .reset = NULL,
     .shutdown = NULL,

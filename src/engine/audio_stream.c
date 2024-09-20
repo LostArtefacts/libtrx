@@ -75,14 +75,13 @@ static float m_MixBuffer[AUDIO_SAMPLES * AUDIO_WORKING_CHANNELS] = { 0 };
 static size_t m_DecodeBufferCapacity = 0;
 static float *m_DecodeBuffer = NULL;
 
-static void Audio_Stream_SeekToStart(AUDIO_STREAM_SOUND *stream);
-static bool Audio_Stream_DecodeFrame(AUDIO_STREAM_SOUND *stream);
-static bool Audio_Stream_EnqueueFrame(AUDIO_STREAM_SOUND *stream);
-static bool Audio_Stream_InitialiseFromPath(
-    int32_t sound_id, const char *file_path);
-static void Audio_Stream_Clear(AUDIO_STREAM_SOUND *stream);
+static void M_SeekToStart(AUDIO_STREAM_SOUND *stream);
+static bool M_DecodeFrame(AUDIO_STREAM_SOUND *stream);
+static bool M_EnqueueFrame(AUDIO_STREAM_SOUND *stream);
+static bool M_InitialiseFromPath(int32_t sound_id, const char *file_path);
+static void M_Clear(AUDIO_STREAM_SOUND *stream);
 
-static void Audio_Stream_SeekToStart(AUDIO_STREAM_SOUND *stream)
+static void M_SeekToStart(AUDIO_STREAM_SOUND *stream)
 {
     assert(stream != NULL);
 
@@ -101,14 +100,14 @@ static void Audio_Stream_SeekToStart(AUDIO_STREAM_SOUND *stream)
     }
 }
 
-static bool Audio_Stream_DecodeFrame(AUDIO_STREAM_SOUND *stream)
+static bool M_DecodeFrame(AUDIO_STREAM_SOUND *stream)
 {
     assert(stream != NULL);
 
     if (stream->stop_at > 0.0 && stream->timestamp >= stream->stop_at) {
         if (stream->is_looped) {
-            Audio_Stream_SeekToStart(stream);
-            return Audio_Stream_DecodeFrame(stream);
+            M_SeekToStart(stream);
+            return M_DecodeFrame(stream);
         } else {
             return false;
         }
@@ -118,8 +117,8 @@ static bool Audio_Stream_DecodeFrame(AUDIO_STREAM_SOUND *stream)
         av_read_frame(stream->av.format_ctx, stream->av.packet);
 
     if (error_code == AVERROR_EOF && stream->is_looped) {
-        Audio_Stream_SeekToStart(stream);
-        return Audio_Stream_DecodeFrame(stream);
+        M_SeekToStart(stream);
+        return M_DecodeFrame(stream);
     }
 
     if (error_code < 0) {
@@ -142,7 +141,7 @@ static bool Audio_Stream_DecodeFrame(AUDIO_STREAM_SOUND *stream)
     return true;
 }
 
-static bool Audio_Stream_EnqueueFrame(AUDIO_STREAM_SOUND *stream)
+static bool M_EnqueueFrame(AUDIO_STREAM_SOUND *stream)
 {
     assert(stream != NULL);
 
@@ -245,8 +244,7 @@ cleanup:
     return true;
 }
 
-static bool Audio_Stream_InitialiseFromPath(
-    int32_t sound_id, const char *file_path)
+static bool M_InitialiseFromPath(int32_t sound_id, const char *file_path)
 {
     assert(file_path != NULL);
 
@@ -323,7 +321,7 @@ static bool Audio_Stream_InitialiseFromPath(
         goto cleanup;
     }
 
-    Audio_Stream_DecodeFrame(stream);
+    M_DecodeFrame(stream);
 
     int32_t sdl_sample_rate = stream->av.codec_ctx->sample_rate;
     int32_t sdl_channels = stream->av.codec_ctx->channels;
@@ -350,7 +348,7 @@ static bool Audio_Stream_InitialiseFromPath(
     }
 
     ret = true;
-    Audio_Stream_EnqueueFrame(stream);
+    M_EnqueueFrame(stream);
 
 cleanup:
     if (error_code) {
@@ -368,7 +366,7 @@ cleanup:
     return ret;
 }
 
-static void Audio_Stream_Clear(AUDIO_STREAM_SOUND *stream)
+static void M_Clear(AUDIO_STREAM_SOUND *stream)
 {
     assert(stream != NULL);
 
@@ -388,7 +386,7 @@ void Audio_Stream_Init(void)
 {
     for (int32_t sound_id = 0; sound_id < AUDIO_MAX_ACTIVE_STREAMS;
          sound_id++) {
-        Audio_Stream_Clear(&m_Streams[sound_id]);
+        M_Clear(&m_Streams[sound_id]);
     }
 }
 
@@ -454,7 +452,7 @@ int32_t Audio_Stream_CreateFromFile(const char *file_path)
             continue;
         }
 
-        if (!Audio_Stream_InitialiseFromPath(sound_id, file_path)) {
+        if (!M_InitialiseFromPath(sound_id, file_path)) {
             return AUDIO_NO_SOUND;
         }
 
@@ -510,7 +508,7 @@ bool Audio_Stream_Close(int32_t sound_id)
     void (*finish_callback)(int32_t, void *) = stream->finish_callback;
     void *finish_callback_user_data = stream->finish_callback_user_data;
 
-    Audio_Stream_Clear(stream);
+    M_Clear(stream);
 
     SDL_UnlockAudioDevice(g_AudioDeviceID);
 
@@ -581,8 +579,8 @@ void Audio_Stream_Mix(float *dst_buffer, size_t len)
 
         while ((SDL_AudioStreamAvailable(stream->sdl.stream) < (int32_t)len)
                && !stream->is_read_done) {
-            if (Audio_Stream_DecodeFrame(stream)) {
-                Audio_Stream_EnqueueFrame(stream);
+            if (M_DecodeFrame(stream)) {
+                M_EnqueueFrame(stream);
             } else {
                 stream->is_read_done = true;
             }
@@ -598,7 +596,7 @@ void Audio_Stream_Mix(float *dst_buffer, size_t len)
             stream->is_read_done = true;
         } else if (bytes_gotten == 0) {
             // legit end of stream. looping is handled in
-            // Audio_Stream_DecodeFrame
+            // M_DecodeFrame
             stream->is_playing = false;
             stream->is_used = false;
             stream->is_read_done = true;

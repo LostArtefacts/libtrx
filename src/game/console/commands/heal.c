@@ -5,7 +5,9 @@
 #include "game/lara/common.h"
 #include "game/lara/misc.h"
 
-static COMMAND_RESULT Console_Cmd_Heal(const char *const args)
+static COMMAND_RESULT M_Entrypoint(const char *args);
+
+static COMMAND_RESULT M_Entrypoint(const char *const args)
 {
     if (!Game_IsPlayable()) {
         return CR_UNAVAILABLE;
@@ -25,5 +27,5 @@ static COMMAND_RESULT Console_Cmd_Heal(const char *const args)
 
 CONSOLE_COMMAND g_Console_Cmd_Heal = {
     .prefix = "heal",
-    .proc = Console_Cmd_Heal,
+    .proc = M_Entrypoint,
 };

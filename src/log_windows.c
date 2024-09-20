@@ -12,13 +12,13 @@
 #include <tlhelp32.h>
 
 static char *m_MiniDumpPath = NULL;
-static char *Log_GetMiniDumpPath(const char *log_path);
-static void Log_CreateMiniDump(EXCEPTION_POINTERS *ex, const char *path);
-static void Log_StackTrace(
+static char *M_GetMiniDumpPath(const char *log_path);
+static void M_CreateMiniDump(EXCEPTION_POINTERS *ex, const char *path);
+static void M_StackTrace(
     uint64_t addr, const char *filename, int line_no, const char *func_name,
     void *context, int column_no);
 
-static char *Log_GetMiniDumpPath(const char *const log_path)
+static char *M_GetMiniDumpPath(const char *const log_path)
 {
     char *dot = strrchr(log_path, '.');
     if (dot == NULL) {
@@ -34,7 +34,7 @@ static char *Log_GetMiniDumpPath(const char *const log_path)
     return minidump_path;
 }
 
-static void Log_StackTrace(
+static void M_StackTrace(
     const uint64_t addr, const char *filename, const int line_no,
     const char *const func_name, void *const context, const int column_no)
 {
@@ -68,7 +68,7 @@ static void Log_StackTrace(
     }
 }
 
-static void Log_CreateMiniDump(
+static void M_CreateMiniDump(
     EXCEPTION_POINTERS *const ex, const char *const path)
 {
     HANDLE handle = CreateFile(
@@ -94,9 +94,9 @@ LONG WINAPI Log_CrashHandler(EXCEPTION_POINTERS *ex)
     LOG_INFO("STACK TRACE:");
 
     int32_t count = 0;
-    dwstOfException(ex->ContextRecord, &Log_StackTrace, &count);
+    dwstOfException(ex->ContextRecord, &M_StackTrace, &count);
 
-    Log_CreateMiniDump(ex, m_MiniDumpPath);
+    M_CreateMiniDump(ex, m_MiniDumpPath);
 
     return EXCEPTION_EXECUTE_HANDLER;
 }
@@ -104,7 +104,7 @@ LONG WINAPI Log_CrashHandler(EXCEPTION_POINTERS *ex)
 void Log_Init_Extra(const char *log_path)
 {
     if (log_path != NULL) {
-        m_MiniDumpPath = Log_GetMiniDumpPath(log_path);
+        m_MiniDumpPath = M_GetMiniDumpPath(log_path);
         SetUnhandledExceptionFilter(Log_CrashHandler);
     }
 }

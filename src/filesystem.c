@@ -24,30 +24,30 @@ struct MYFILE {
 
 const char *m_GameDir = NULL;
 
-static void File_PathAppendSeparator(char *path);
-static void File_PathAppendPart(char *path, const char *part);
-static char *File_CasePath(char const *path);
-static bool File_ExistsRaw(const char *path);
+static void M_PathAppendSeparator(char *path);
+static void M_PathAppendPart(char *path, const char *part);
+static char *M_CasePath(char const *path);
+static bool M_ExistsRaw(const char *path);
 
-static void File_PathAppendSeparator(char *path)
+static void M_PathAppendSeparator(char *path)
 {
     if (!String_EndsWith(path, PATH_SEPARATOR)) {
         strcat(path, PATH_SEPARATOR);
     }
 }
 
-static void File_PathAppendPart(char *path, const char *part)
+static void M_PathAppendPart(char *path, const char *part)
 {
-    File_PathAppendSeparator(path);
+    M_PathAppendSeparator(path);
     strcat(path, part);
 }
 
-static char *File_CasePath(char const *path)
+static char *M_CasePath(char const *path)
 {
     assert(path);
 
     char *path_copy = Memory_DupStr(path);
-    if (File_ExistsRaw(path)) {
+    if (M_ExistsRaw(path)) {
         return path_copy;
     }
 
@@ -82,7 +82,7 @@ static char *File_CasePath(char const *path)
         struct dirent *cur_file = readdir(path_dir);
         while (cur_file) {
             if (String_Equivalent(path_piece, cur_file->d_name)) {
-                File_PathAppendPart(current_path, cur_file->d_name);
+                M_PathAppendPart(current_path, cur_file->d_name);
                 break;
             }
             cur_file = readdir(path_dir);
@@ -90,7 +90,7 @@ static char *File_CasePath(char const *path)
         closedir(path_dir);
 
         if (!cur_file) {
-            File_PathAppendPart(current_path, path_piece);
+            M_PathAppendPart(current_path, path_piece);
         }
 
         if (delim) {
@@ -115,7 +115,7 @@ static char *File_CasePath(char const *path)
     return result;
 }
 
-static bool File_ExistsRaw(const char *path)
+static bool M_ExistsRaw(const char *path)
 {
     FILE *fp = fopen(path, "rb");
     if (fp) {
@@ -162,7 +162,7 @@ bool File_DirExists(const char *path)
 bool File_Exists(const char *path)
 {
     char *full_path = File_GetFullPath(path);
-    bool ret = File_ExistsRaw(full_path);
+    bool ret = M_ExistsRaw(full_path);
     Memory_FreePointer(&full_path);
     return ret;
 }
@@ -181,7 +181,7 @@ char *File_GetFullPath(const char *path)
         full_path = Memory_DupStr(path);
     }
 
-    char *case_path = File_CasePath(full_path);
+    char *case_path = M_CasePath(full_path);
     if (case_path) {
         Memory_FreePointer(&full_path);
         return case_path;
