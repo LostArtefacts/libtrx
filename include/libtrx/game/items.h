@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define NO_ITEM (-1)
+
 #pragma pack(push, 1)
 
 #if TR_VERSION == 1
@@ -93,4 +95,7 @@ typedef struct {
 
 #pragma pack(pop)
 
+ITEM_INFO *Item_Get(int16_t num);
+int32_t Item_GetTotalCount(void);
+int32_t Item_GetDistance(const ITEM_INFO *item, const XYZ_32 *target);
 void Item_TakeDamage(ITEM_INFO *item, int16_t damage, bool hit_status);
