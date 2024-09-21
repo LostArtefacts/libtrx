@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../types.h"
+
 #include <stdbool.h>
 
 typedef enum {
@@ -9,7 +11,7 @@ typedef enum {
     CR_BAD_INVOCATION,
 } COMMAND_RESULT;
 
-typedef struct {
+typedef struct __PACKING {
     const char *prefix;
     COMMAND_RESULT (*proc)(const char *args);
 } CONSOLE_COMMAND;

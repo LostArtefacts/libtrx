@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../items.h"
+#include "types.h"
 
-#define LARA_MAX_HITPOINTS 1000
-
+LARA_INFO *Lara_GetLaraInfo(void);
 ITEM_INFO *Lara_GetItem(void);

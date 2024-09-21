@@ -3,7 +3,7 @@
 #include "math.h"
 
 #if TR_VERSION == 1
-typedef struct COLL_INFO {
+typedef struct __PACKING {
     int32_t mid_floor;
     int32_t mid_ceiling;
     int32_t mid_type;
@@ -37,16 +37,13 @@ typedef struct COLL_INFO {
 } COLL_INFO;
 
 #elif TR_VERSION == 2
-typedef struct __unaligned
-{
+typedef struct __PACKING {
     int32_t floor;
     int32_t ceiling;
     int32_t type;
-}
-COLL_SIDE;
+} COLL_SIDE;
 
-typedef struct __unaligned
-{
+typedef struct __PACKING {
     COLL_SIDE side_mid;
     COLL_SIDE side_front;
     COLL_SIDE side_left;
@@ -77,6 +74,5 @@ typedef struct __unaligned
     uint16_t hit_ceiling:        1; // 0x20 32
     uint16_t pad:                10;
     // clang-format on
-}
-COLL_INFO;
+} COLL_INFO;
 #endif

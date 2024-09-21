@@ -3,6 +3,7 @@
 #include "game/game.h"
 #include "game/game_string.h"
 #include "game/lara/common.h"
+#include "game/lara/const.h"
 #include "game/lara/misc.h"
 
 static COMMAND_RESULT M_Entrypoint(const char *args);

@@ -17,6 +17,7 @@ relative_dir = fs.relative_to(meson.current_source_dir(), meson.global_build_roo
 build_opts = [
   '-fmacro-prefix-map=@0@/src=libtrx'.format(relative_dir),
   '-Wno-unused',
+  '-Wno-address-of-packed-member',
   '-DMESON_BUILD',
   '-DDWST_STATIC',
   '-DPCRE2_STATIC',
@@ -73,8 +74,8 @@ sources = [
   'src/game/console/cmd/kill.c',
   'src/game/console/cmd/pos.c',
   'src/game/console/cmd/set_health.c',
-  'src/game/items.c',
   'src/game/game_string.c',
+  'src/game/items.c',
   'src/gfx/2d/2d_renderer.c',
   'src/gfx/2d/2d_surface.c',
   'src/gfx/3d/3d_renderer.c',

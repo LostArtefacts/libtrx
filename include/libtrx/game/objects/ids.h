@@ -195,7 +195,7 @@ typedef enum {
     O_TEMP_10 = 189,
     O_HAIR = O_TEMP_10,
     O_ALPHABET = 190,
-#else
+#elif TR_VERSION == 2
     O_NONE = -1,
     O_LARA = 0,
     O_LARA_PISTOLS = 1,

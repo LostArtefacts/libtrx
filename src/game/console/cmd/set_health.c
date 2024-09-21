@@ -4,6 +4,7 @@
 #include "game/game.h"
 #include "game/game_string.h"
 #include "game/lara/common.h"
+#include "game/lara/const.h"
 #include "game/objects/common.h"
 #include "strings.h"
 #include "utils.h"
