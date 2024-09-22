@@ -148,8 +148,11 @@ static COMMAND_RESULT M_TeleportToObject(const char *const user_input)
         return CR_FAILURE;
     }
 
-    const char *const obj_name =
-        Object_GetName(best_item->object_id) || user_input;
+    const char *obj_name = Object_GetName(best_item->object_id);
+    if (obj_name == NULL) {
+        obj_name = user_input;
+    }
+
     if (Lara_Cheat_Teleport(
             best_item->pos.x, best_item->pos.y - STEP_L, best_item->pos.z)) {
         Console_Log(GS(OSD_POS_SET_ITEM), obj_name);

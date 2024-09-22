@@ -76,6 +76,7 @@ sources = [
   'src/game/console/cmd/give_item.c',
   'src/game/console/cmd/heal.c',
   'src/game/console/cmd/kill.c',
+  'src/game/console/cmd/play_demo.c',
   'src/game/console/cmd/pos.c',
   'src/game/console/cmd/set_health.c',
   'src/game/console/cmd/sfx.c',
