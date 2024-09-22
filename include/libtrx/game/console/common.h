@@ -17,3 +17,4 @@ typedef struct __PACKING {
 } CONSOLE_COMMAND;
 
 void Console_Log(const char *fmt, ...);
+COMMAND_RESULT Console_Eval(const char *cmdline);
