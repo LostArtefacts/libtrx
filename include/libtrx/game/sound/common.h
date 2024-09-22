@@ -11,4 +11,5 @@ typedef enum SOUND_PLAY_MODE {
 } SOUND_PLAY_MODE;
 // clang-format on
 
-bool Sound_Effect(int32_t sfx_num, const XYZ_32 *pos, uint32_t flags);
+bool Sound_Effect(SOUND_EFFECT_ID sfx_num, const XYZ_32 *pos, uint32_t flags);
+bool Sound_IsAvailable(SOUND_EFFECT_ID sfx_num);

@@ -3,6 +3,7 @@
 #if TR_VERSION == 1
 // clang-format off
 typedef enum SOUND_EFFECT_ID {
+    SFX_INVALID               = -1,
     SFX_LARA_FEET             = 0,
     SFX_LARA_CLIMB2           = 1,
     SFX_LARA_NO               = 2,
@@ -202,12 +203,14 @@ typedef enum SOUND_EFFECT_ID {
     SFX_SKATEKID_SPEECH       = 204,
     SFX_LARA_SETUP            = 205,
     SFX_EXPLOSION_CHEAT       = SFX_ATLANTEAN_EXPLODE,
+    SFX_NUMBER_OF             = 256,
     // clang-format on
 } SOUND_EFFECT_ID;
 
 #elif TR_VERSION == 2
 typedef enum {
     // clang-format off
+    SFX_INVALID                   = -1,
     SFX_LARA_FEET                 = 0,
     SFX_LARA_CLIMB2               = 1,
     SFX_LARA_NO                   = 2,
