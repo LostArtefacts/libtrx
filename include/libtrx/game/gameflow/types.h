@@ -1,0 +1,24 @@
+#pragma once
+
+#include <stdint.h>
+
+typedef enum {
+    GF_CONTINUE_SEQUENCE,
+    GF_START_GAME,
+    GF_START_CINE,
+    GF_START_FMV,
+    GF_START_DEMO,
+    GF_EXIT_TO_TITLE,
+    GF_LEVEL_COMPLETE,
+    GF_EXIT_GAME,
+    GF_START_SAVED_GAME,
+    GF_RESTART_GAME,
+    GF_SELECT_GAME,
+    GF_START_GYM,
+    GF_STORY_SO_FAR,
+} GAMEFLOW_ACTION;
+
+typedef struct GAMEFLOW_COMMAND {
+    GAMEFLOW_ACTION action;
+    int32_t param;
+} GAMEFLOW_COMMAND;
