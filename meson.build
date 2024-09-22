@@ -76,6 +76,7 @@ sources = [
   'src/game/console/cmd/pos.c',
   'src/game/console/cmd/set_health.c',
   'src/game/game_string.c',
+  'src/game/console/common.c',
   'src/game/items.c',
   'src/gfx/2d/2d_renderer.c',
   'src/gfx/2d/2d_surface.c',
