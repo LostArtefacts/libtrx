@@ -11,9 +11,15 @@ typedef enum {
     CR_BAD_INVOCATION,
 } COMMAND_RESULT;
 
-typedef struct __PACKING {
+typedef struct {
+    const struct __PACKING CONSOLE_COMMAND *cmd;
     const char *prefix;
-    COMMAND_RESULT (*proc)(const char *args);
+    const char *args;
+} COMMAND_CONTEXT;
+
+typedef struct __PACKING CONSOLE_COMMAND {
+    const char *prefix;
+    COMMAND_RESULT (*proc)(const COMMAND_CONTEXT *ctx);
 } CONSOLE_COMMAND;
 
 void Console_Log(const char *fmt, ...);

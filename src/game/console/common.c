@@ -67,31 +67,16 @@ COMMAND_RESULT Console_Eval(const char *const cmdline)
 {
     LOG_INFO("executing command: %s", cmdline);
 
-    const char *args = NULL;
     const CONSOLE_COMMAND *matching_cmd = NULL;
-
     CONSOLE_COMMAND **cmd = Console_GetCommands();
-    for (int32_t i = 0;; i++) {
-        CONSOLE_COMMAND *cur_cmd = cmd[i];
-        if (cur_cmd == NULL) {
+    while (*cmd != NULL) {
+        char regex[strlen((*cmd)->prefix) + 13];
+        sprintf(regex, "^(%s)(\\s+.*)?$", (*cmd)->prefix);
+        if (String_Match(cmdline, regex)) {
+            matching_cmd = *cmd;
             break;
         }
-
-        char regex[strlen(cur_cmd->prefix) + 13];
-        sprintf(regex, "^(%s)(\\s+.*)?$", cur_cmd->prefix);
-        if (!String_Match(cmdline, regex)) {
-            continue;
-        }
-
-        args = strstr(cmdline, " ");
-        if (args != NULL) {
-            args++;
-        } else {
-            args = "";
-        }
-
-        matching_cmd = cur_cmd;
-        break;
+        *cmd++;
     }
 
     if (matching_cmd == NULL) {
@@ -99,8 +84,22 @@ COMMAND_RESULT Console_Eval(const char *const cmdline)
         return CR_BAD_INVOCATION;
     }
 
+    char *prefix = Memory_DupStr(cmdline);
+    char *args = "";
+    char *space = strchr(prefix, ' ');
+    if (space != NULL) {
+        *space = '\0';
+        args = space + 1;
+    }
+
+    const COMMAND_CONTEXT ctx = {
+        .cmd = matching_cmd,
+        .prefix = prefix,
+        .args = args,
+    };
     assert(matching_cmd->proc != NULL);
-    const COMMAND_RESULT result = matching_cmd->proc(args);
+    const COMMAND_RESULT result = matching_cmd->proc(&ctx);
+    Memory_FreePointer(&prefix);
 
     switch (result) {
     case CR_BAD_INVOCATION:

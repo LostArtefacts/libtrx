@@ -7,9 +7,9 @@
 #include "game/objects/ids.h"
 #include "game/sound.h"
 
-static COMMAND_RESULT M_Entrypoint(const char *args);
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *ctx);
 
-static COMMAND_RESULT M_Entrypoint(const char *const args)
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 {
     if (!Object_GetObject(O_LARA)->loaded) {
         return CR_UNAVAILABLE;

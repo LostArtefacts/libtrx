@@ -6,9 +6,9 @@
 #include "game/lara/common.h"
 #include "game/objects/common.h"
 
-static COMMAND_RESULT M_Entrypoint(const char *args);
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *ctx);
 
-static COMMAND_RESULT M_Entrypoint(const char *const args)
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 {
     const OBJECT_INFO *const object = Object_GetObject(O_LARA);
     if (!object->loaded) {

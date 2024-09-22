@@ -14,35 +14,36 @@
 #include <string.h>
 
 static bool M_CanTargetObjectPickup(GAME_OBJECT_ID object_id);
-static COMMAND_RESULT M_Entrypoint(const char *args);
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *ctx);
 
 static bool M_CanTargetObjectPickup(const GAME_OBJECT_ID object_id)
 {
     return Object_IsObjectType(object_id, g_PickupObjects);
 }
 
-static COMMAND_RESULT M_Entrypoint(const char *args)
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 {
     if (!Game_IsPlayable()) {
         return CR_UNAVAILABLE;
     }
 
-    if (String_Equivalent(args, "keys")) {
+    if (String_Equivalent(ctx->args, "keys")) {
         return Lara_Cheat_GiveAllKeys() ? CR_SUCCESS : CR_FAILURE;
     }
 
-    if (String_Equivalent(args, "guns")) {
+    if (String_Equivalent(ctx->args, "guns")) {
         return Lara_Cheat_GiveAllGuns() ? CR_SUCCESS : CR_FAILURE;
     }
 
-    if (String_Equivalent(args, "all")) {
+    if (String_Equivalent(ctx->args, "all")) {
         return Lara_Cheat_GiveAllItems() ? CR_SUCCESS : CR_FAILURE;
     }
 
     int32_t num = 1;
-    if (sscanf(args, "%d ", &num) == 1) {
+    const char *args = ctx->args;
+    if (sscanf(ctx->args, "%d ", &num) == 1) {
         args = strstr(args, " ");
-        if (!args) {
+        if (args == NULL) {
             return CR_BAD_INVOCATION;
         }
         args++;

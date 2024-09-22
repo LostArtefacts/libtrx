@@ -15,7 +15,7 @@
 #include "strings.h"
 
 static bool M_CanTargetObjectCreature(GAME_OBJECT_ID object_id);
-static COMMAND_RESULT M_Entrypoint(const char *args);
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *ctx);
 
 static bool M_CanTargetObjectCreature(const GAME_OBJECT_ID object_id)
 {
@@ -23,10 +23,10 @@ static bool M_CanTargetObjectCreature(const GAME_OBJECT_ID object_id)
         || Object_IsObjectType(object_id, g_AllyObjects);
 }
 
-static COMMAND_RESULT M_Entrypoint(const char *const args)
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 {
     // kill all the enemies in the level
-    if (String_Equivalent(args, "all")) {
+    if (String_Equivalent(ctx->args, "all")) {
         int32_t num_killed = 0;
         for (int16_t item_num = 0; item_num < Item_GetTotalCount();
              item_num++) {
@@ -50,7 +50,7 @@ static COMMAND_RESULT M_Entrypoint(const char *const args)
 
     // kill all the enemies around Lara within one tile, or a single nearest
     // enemy
-    if (String_Equivalent(args, "")) {
+    if (String_Equivalent(ctx->args, "")) {
         bool found = false;
         while (true) {
             const int16_t best_item_num = Lara_GetNearestEnemy();
@@ -81,8 +81,8 @@ static COMMAND_RESULT M_Entrypoint(const char *const args)
         bool matches_found = false;
         int32_t num_killed = 0;
         int32_t match_count = 0;
-        GAME_OBJECT_ID *matching_objs =
-            Object_IdsFromName(args, &match_count, M_CanTargetObjectCreature);
+        GAME_OBJECT_ID *matching_objs = Object_IdsFromName(
+            ctx->args, &match_count, M_CanTargetObjectCreature);
 
         for (int16_t item_num = 0; item_num < Item_GetTotalCount();
              item_num++) {
@@ -107,11 +107,11 @@ static COMMAND_RESULT M_Entrypoint(const char *const args)
         Memory_FreePointer(&matching_objs);
 
         if (!matches_found) {
-            Console_Log(GS(OSD_INVALID_OBJECT), args);
+            Console_Log(GS(OSD_INVALID_OBJECT), ctx->args);
             return CR_FAILURE;
         }
         if (num_killed == 0) {
-            Console_Log(GS(OSD_OBJECT_NOT_FOUND), args);
+            Console_Log(GS(OSD_OBJECT_NOT_FOUND), ctx->args);
             return CR_FAILURE;
         }
         Console_Log(GS(OSD_KILL_ALL), num_killed);

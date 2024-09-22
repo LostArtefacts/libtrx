@@ -11,7 +11,7 @@
 #include <string.h>
 
 static char *M_CreateRangeString(void);
-static COMMAND_RESULT M_Entrypoint(const char *const args);
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *ctx);
 
 static char *M_CreateRangeString(void)
 {
@@ -55,9 +55,9 @@ static char *M_CreateRangeString(void)
     return result;
 }
 
-static COMMAND_RESULT M_Entrypoint(const char *const args)
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 {
-    if (String_IsEmpty(args)) {
+    if (String_IsEmpty(ctx->args)) {
         char *ranges = M_CreateRangeString();
         Console_Log(GS(OSD_SOUND_AVAILABLE_SAMPLES), ranges);
         Memory_FreePointer(&ranges);
@@ -65,7 +65,7 @@ static COMMAND_RESULT M_Entrypoint(const char *const args)
     }
 
     int32_t sfx_id;
-    if (!String_ParseInteger(args, &sfx_id)) {
+    if (!String_ParseInteger(ctx->args, &sfx_id)) {
         return CR_BAD_INVOCATION;
     }
 

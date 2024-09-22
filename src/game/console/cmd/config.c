@@ -19,6 +19,8 @@ static bool M_GetCurrentValue(
 static bool M_SetCurrentValue(
     const CONFIG_OPTION *option, const char *new_value);
 
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *ctx);
+
 static const char *M_Resolve(const char *const option_name)
 {
     const char *dot = strrchr(option_name, '.');
@@ -161,6 +163,32 @@ static bool M_SetCurrentValue(
     return false;
 }
 
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
+{
+    COMMAND_RESULT result = CR_BAD_INVOCATION;
+
+    char *key = Memory_DupStr(ctx->args);
+    char *const space = strchr(key, ' ');
+    const char *new_value = NULL;
+    if (space != NULL) {
+        new_value = space + 1;
+        space[0] = '\0'; // NULL-terminate the key
+    }
+
+    const CONFIG_OPTION *const option =
+        Console_Cmd_Config_GetOptionFromKey(key);
+    if (option == NULL) {
+        Console_Log(GS(OSD_CONFIG_OPTION_UNKNOWN_OPTION), key);
+        result = CR_FAILURE;
+    } else {
+        result = Console_Cmd_Config_Helper(option, new_value);
+    }
+
+cleanup:
+    Memory_FreePointer(&key);
+    return result;
+}
+
 const CONFIG_OPTION *Console_Cmd_Config_GetOptionFromKey(const char *const key)
 {
     for (const CONFIG_OPTION *option = Config_GetOptionMap();
@@ -215,32 +243,6 @@ COMMAND_RESULT Console_Cmd_Config_Helper(
 
 cleanup:
     Memory_FreePointer(&normalized_name);
-    return result;
-}
-
-static COMMAND_RESULT M_Entrypoint(const char *const args)
-{
-    COMMAND_RESULT result = CR_BAD_INVOCATION;
-
-    char *key = Memory_DupStr(args);
-    char *const space = strchr(key, ' ');
-    const char *new_value = NULL;
-    if (space != NULL) {
-        new_value = space + 1;
-        space[0] = '\0'; // NULL-terminate the key
-    }
-
-    const CONFIG_OPTION *const option =
-        Console_Cmd_Config_GetOptionFromKey(key);
-    if (option == NULL) {
-        Console_Log(GS(OSD_CONFIG_OPTION_UNKNOWN_OPTION), key);
-        result = CR_FAILURE;
-    } else {
-        result = Console_Cmd_Config_Helper(option, new_value);
-    }
-
-cleanup:
-    Memory_FreePointer(&key);
     return result;
 }
 

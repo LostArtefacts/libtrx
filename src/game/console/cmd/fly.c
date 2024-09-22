@@ -4,9 +4,9 @@
 #include "game/game_string.h"
 #include "game/lara/cheat.h"
 
-static COMMAND_RESULT M_Entrypoint(const char *const args);
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *ctx);
 
-static COMMAND_RESULT M_Entrypoint(const char *const args)
+static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 {
     if (!Game_IsPlayable()) {
         return CR_UNAVAILABLE;
