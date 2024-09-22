@@ -3,9 +3,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-bool Lara_Cheat_GiveAllKeys(void);
-bool Lara_Cheat_GiveAllGuns(void);
-bool Lara_Cheat_GiveAllItems(void);
-bool Lara_Cheat_EnterFlyMode(void);
-bool Lara_Cheat_ExitFlyMode(void);
-bool Lara_Cheat_KillEnemy(int16_t item_num);
+extern bool Lara_Cheat_GiveAllKeys(void);
+extern bool Lara_Cheat_GiveAllGuns(void);
+extern bool Lara_Cheat_GiveAllItems(void);
+extern bool Lara_Cheat_EnterFlyMode(void);
+extern bool Lara_Cheat_ExitFlyMode(void);
+extern bool Lara_Cheat_KillEnemy(int16_t item_num);
+extern void Lara_Cheat_EndLevel(void);

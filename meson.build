@@ -69,6 +69,7 @@ sources = [
   'src/game/backpack.c',
   'src/game/console/cmd/config.c',
   'src/game/console/cmd/die.c',
+  'src/game/console/cmd/end_level.c',
   'src/game/console/cmd/fly.c',
   'src/game/console/cmd/give_item.c',
   'src/game/console/cmd/heal.c',
