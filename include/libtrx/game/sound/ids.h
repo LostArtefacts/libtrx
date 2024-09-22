@@ -201,7 +201,7 @@ typedef enum SOUND_EFFECT_ID {
     SFX_PIERRE_SPEECH         = 203,
     SFX_SKATEKID_SPEECH       = 204,
     SFX_LARA_SETUP            = 205,
-    SFX_EXPLOSION_CHEAT       = 206,
+    SFX_EXPLOSION_CHEAT       = SFX_ATLANTEAN_EXPLODE,
     // clang-format on
 } SOUND_EFFECT_ID;
 
@@ -310,7 +310,7 @@ typedef enum {
     SFX_TIGER_DEATH               = 102,
     SFX_TIGER_GROWL               = 103,
     SFX_M16_STOP                  = 104,
-    SFX_EXPLOSION1                = 105,
+    SFX_EXPLOSION_1               = 105,
     SFX_GROWL                     = 106,
     SFX_SPIDER_JUMP               = 107,
     SFX_MENU_ROTATE               = 108,
@@ -538,9 +538,10 @@ typedef enum {
     SFX_SPIDER_EXPLODE            = 349,
     SFX_SHARK_BITE                = 350,
     SFX_LAVA_BUBBLES              = 351,
-    SFX_EXPLOSION2                = 352,
+    SFX_EXPLOSION_2               = 352,
     SFX_BURGLARS                  = 353,
     SFX_ZIPPER                    = 354,
+    SFX_EXPLOSION_CHEAT           = SFX_EXPLOSION_1,
     SFX_NUMBER_OF                 = 370,
 } SOUND_EFFECT_ID;
 // clang-format on

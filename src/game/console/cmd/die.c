@@ -22,9 +22,7 @@ static COMMAND_RESULT M_Entrypoint(const char *const args)
     }
 
     Sound_Effect(SFX_LARA_FALL, &lara_item->pos, SPM_NORMAL);
-#if TR_VERSION == 1
     Sound_Effect(SFX_EXPLOSION_CHEAT, &lara_item->pos, SPM_NORMAL);
-#endif
     Effect_ExplodingDeath(lara->item_num, -1, 1);
 
     lara_item->hit_points = 0;
