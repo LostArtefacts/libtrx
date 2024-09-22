@@ -79,6 +79,7 @@ sources = [
   'src/game/console/cmd/pos.c',
   'src/game/console/cmd/set_health.c',
   'src/game/console/cmd/sfx.c',
+  'src/game/console/cmd/teleport.c',
   'src/game/game_string.c',
   'src/game/console/common.c',
   'src/game/items.c',

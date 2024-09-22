@@ -2,7 +2,7 @@
 
 #include "../math.h"
 #include "../objects/ids.h"
-#include "enum.h"
+#include "./enum.h"
 
 #if TR_VERSION == 1
 typedef struct __PACKING CARRIED_ITEM {

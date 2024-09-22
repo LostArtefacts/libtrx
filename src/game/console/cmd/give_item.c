@@ -61,7 +61,7 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
         const GAME_OBJECT_ID object_id = matching_objs[i];
         if (Object_GetObject(object_id)->loaded) {
             Backpack_AddItemNTimes(object_id, num);
-            Console_Log(GS(OSD_GIVE_ITEM), Object_GetName(object_id));
+            Console_Log(GS(OSD_GIVE_ITEM), Object_GetName(object_id) || args);
             found = true;
         }
     }

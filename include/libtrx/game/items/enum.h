@@ -17,4 +17,13 @@ typedef enum {
     IF_INVISIBLE = 0x0100,
     IF_KILLED    = 0x8000,
 } ITEM_FLAG;
+
+
+typedef enum {
+    IS_INACTIVE    = 0,
+    IS_ACTIVE      = 1,
+    IS_DEACTIVATED = 2,
+    IS_INVISIBLE   = 3,
+} ITEM_STATUS;
+
 // clang-format on
