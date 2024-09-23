@@ -2,4 +2,4 @@
 
 #include "../renderer.h"
 
-extern GFX_Renderer g_GFX_Renderer_FBO;
+extern GFX_RENDERER g_GFX_Renderer_FBO;

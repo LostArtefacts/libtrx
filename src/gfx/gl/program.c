@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <string.h>
 
-bool GFX_GL_Program_Init(GFX_GL_Program *program)
+bool GFX_GL_Program_Init(GFX_GL_PROGRAM *program)
 {
     assert(program);
     program->id = glCreateProgram();
@@ -22,7 +22,7 @@ bool GFX_GL_Program_Init(GFX_GL_Program *program)
     return true;
 }
 
-void GFX_GL_Program_Close(GFX_GL_Program *program)
+void GFX_GL_Program_Close(GFX_GL_PROGRAM *program)
 {
     if (program->id) {
         glDeleteProgram(program->id);
@@ -31,7 +31,7 @@ void GFX_GL_Program_Close(GFX_GL_Program *program)
     }
 }
 
-void GFX_GL_Program_Bind(GFX_GL_Program *program)
+void GFX_GL_Program_Bind(GFX_GL_PROGRAM *program)
 {
     glUseProgram(program->id);
     GFX_GL_CheckError();
@@ -83,7 +83,7 @@ char *GFX_GL_Program_PreprocessShader(
 }
 
 void GFX_GL_Program_AttachShader(
-    GFX_GL_Program *program, GLenum type, const char *path)
+    GFX_GL_PROGRAM *program, GLenum type, const char *path)
 {
     GLuint shader_id = glCreateShader(type);
     GFX_GL_CheckError();
@@ -135,7 +135,7 @@ void GFX_GL_Program_AttachShader(
     GFX_GL_CheckError();
 }
 
-void GFX_GL_Program_Link(GFX_GL_Program *program)
+void GFX_GL_Program_Link(GFX_GL_PROGRAM *program)
 {
     glLinkProgram(program->id);
     GFX_GL_CheckError();
@@ -158,13 +158,13 @@ void GFX_GL_Program_Link(GFX_GL_Program *program)
     }
 }
 
-void GFX_GL_Program_FragmentData(GFX_GL_Program *program, const char *name)
+void GFX_GL_Program_FragmentData(GFX_GL_PROGRAM *program, const char *name)
 {
     glBindFragDataLocation(program->id, 0, name);
     GFX_GL_CheckError();
 }
 
-GLint GFX_GL_Program_UniformLocation(GFX_GL_Program *program, const char *name)
+GLint GFX_GL_Program_UniformLocation(GFX_GL_PROGRAM *program, const char *name)
 {
     GLint location = glGetUniformLocation(program->id, name);
     GFX_GL_CheckError();
@@ -175,28 +175,28 @@ GLint GFX_GL_Program_UniformLocation(GFX_GL_Program *program, const char *name)
 }
 
 void GFX_GL_Program_Uniform3f(
-    GFX_GL_Program *program, GLint loc, GLfloat v0, GLfloat v1, GLfloat v2)
+    GFX_GL_PROGRAM *program, GLint loc, GLfloat v0, GLfloat v1, GLfloat v2)
 {
     glUniform3f(loc, v0, v1, v2);
     GFX_GL_CheckError();
 }
 
 void GFX_GL_Program_Uniform4f(
-    GFX_GL_Program *program, GLint loc, GLfloat v0, GLfloat v1, GLfloat v2,
+    GFX_GL_PROGRAM *program, GLint loc, GLfloat v0, GLfloat v1, GLfloat v2,
     GLfloat v3)
 {
     glUniform4f(loc, v0, v1, v2, v3);
     GFX_GL_CheckError();
 }
 
-void GFX_GL_Program_Uniform1i(GFX_GL_Program *program, GLint loc, GLint v0)
+void GFX_GL_Program_Uniform1i(GFX_GL_PROGRAM *program, GLint loc, GLint v0)
 {
     glUniform1i(loc, v0);
     GFX_GL_CheckError();
 }
 
 void GFX_GL_Program_UniformMatrix4fv(
-    GFX_GL_Program *program, GLint loc, GLsizei count, GLboolean transpose,
+    GFX_GL_PROGRAM *program, GLint loc, GLsizei count, GLboolean transpose,
     const GLfloat *value)
 {
     glUniformMatrix4fv(loc, count, transpose, value);

@@ -7,16 +7,16 @@
 #include <assert.h>
 #include <string.h>
 
-GFX_2D_Surface *GFX_2D_Surface_Create(const GFX_2D_SurfaceDesc *desc)
+GFX_2D_SURFACE *GFX_2D_Surface_Create(const GFX_2D_SURFACE_DESC *desc)
 {
-    GFX_2D_Surface *surface = Memory_Alloc(sizeof(GFX_2D_Surface));
+    GFX_2D_SURFACE *surface = Memory_Alloc(sizeof(GFX_2D_SURFACE));
     GFX_2D_Surface_Init(surface, desc);
     return surface;
 }
 
-GFX_2D_Surface *GFX_2D_Surface_CreateFromImage(const IMAGE *image)
+GFX_2D_SURFACE *GFX_2D_Surface_CreateFromImage(const IMAGE *image)
 {
-    GFX_2D_Surface *surface = Memory_Alloc(sizeof(GFX_2D_Surface));
+    GFX_2D_SURFACE *surface = Memory_Alloc(sizeof(GFX_2D_SURFACE));
     surface->is_locked = false;
     surface->is_dirty = true;
     surface->desc.width = image->width;
@@ -33,7 +33,7 @@ GFX_2D_Surface *GFX_2D_Surface_CreateFromImage(const IMAGE *image)
     return surface;
 }
 
-void GFX_2D_Surface_Free(GFX_2D_Surface *surface)
+void GFX_2D_Surface_Free(GFX_2D_SURFACE *surface)
 {
     if (surface) {
         GFX_2D_Surface_Close(surface);
@@ -42,13 +42,13 @@ void GFX_2D_Surface_Free(GFX_2D_Surface *surface)
 }
 
 void GFX_2D_Surface_Init(
-    GFX_2D_Surface *surface, const GFX_2D_SurfaceDesc *desc)
+    GFX_2D_SURFACE *surface, const GFX_2D_SURFACE_DESC *desc)
 {
     surface->is_locked = false;
     surface->is_dirty = false;
     surface->desc = *desc;
 
-    GFX_2D_SurfaceDesc display_desc = {
+    GFX_2D_SURFACE_DESC display_desc = {
         .bit_count = 32,
         .width = GFX_Context_GetDisplayWidth(),
         .height = GFX_Context_GetDisplayHeight(),
@@ -76,12 +76,12 @@ void GFX_2D_Surface_Init(
     surface->desc.pixels = NULL;
 }
 
-void GFX_2D_Surface_Close(GFX_2D_Surface *surface)
+void GFX_2D_Surface_Close(GFX_2D_SURFACE *surface)
 {
     Memory_FreePointer(&surface->buffer);
 }
 
-bool GFX_2D_Surface_Clear(GFX_2D_Surface *surface)
+bool GFX_2D_Surface_Clear(GFX_2D_SURFACE *surface)
 {
     if (surface->is_locked) {
         LOG_ERROR("Surface is locked");
@@ -93,7 +93,7 @@ bool GFX_2D_Surface_Clear(GFX_2D_Surface *surface)
     return true;
 }
 
-bool GFX_2D_Surface_Lock(GFX_2D_Surface *surface, GFX_2D_SurfaceDesc *out_desc)
+bool GFX_2D_Surface_Lock(GFX_2D_SURFACE *surface, GFX_2D_SURFACE_DESC *out_desc)
 {
     assert(surface != NULL);
     if (surface->is_locked) {
@@ -112,7 +112,7 @@ bool GFX_2D_Surface_Lock(GFX_2D_Surface *surface, GFX_2D_SurfaceDesc *out_desc)
     return true;
 }
 
-bool GFX_2D_Surface_Unlock(GFX_2D_Surface *surface)
+bool GFX_2D_Surface_Unlock(GFX_2D_SURFACE *surface)
 {
     // ensure that the surface is actually locked
     if (!surface->is_locked) {

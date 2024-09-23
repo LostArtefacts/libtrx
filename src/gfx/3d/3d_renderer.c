@@ -7,13 +7,13 @@
 #include <assert.h>
 #include <stddef.h>
 
-static void M_SelectTextureImpl(GFX_3D_Renderer *renderer, int texture_num);
+static void M_SelectTextureImpl(GFX_3D_RENDERER *renderer, int texture_num);
 
-static void M_SelectTextureImpl(GFX_3D_Renderer *renderer, int texture_num)
+static void M_SelectTextureImpl(GFX_3D_RENDERER *renderer, int texture_num)
 {
     assert(renderer);
 
-    GFX_GL_Texture *texture = NULL;
+    GFX_GL_TEXTURE *texture = NULL;
     if (texture_num == GFX_ENV_MAP_TEXTURE) {
         texture = renderer->env_map_texture;
     } else if (texture_num != GFX_NO_TEXTURE) {
@@ -32,7 +32,7 @@ static void M_SelectTextureImpl(GFX_3D_Renderer *renderer, int texture_num)
 }
 
 void GFX_3D_Renderer_Init(
-    GFX_3D_Renderer *renderer, const GFX_CONFIG *const config)
+    GFX_3D_RENDERER *renderer, const GFX_CONFIG *const config)
 {
     LOG_INFO("");
     assert(renderer);
@@ -90,7 +90,7 @@ void GFX_3D_Renderer_Init(
     GFX_GL_CheckError();
 }
 
-void GFX_3D_Renderer_Close(GFX_3D_Renderer *renderer)
+void GFX_3D_Renderer_Close(GFX_3D_RENDERER *renderer)
 {
     LOG_INFO("");
     assert(renderer);
@@ -100,7 +100,7 @@ void GFX_3D_Renderer_Close(GFX_3D_Renderer *renderer)
     GFX_GL_Sampler_Close(&renderer->sampler);
 }
 
-void GFX_3D_Renderer_RenderBegin(GFX_3D_Renderer *renderer)
+void GFX_3D_Renderer_RenderBegin(GFX_3D_RENDERER *renderer)
 {
     assert(renderer);
     glEnable(GL_BLEND);
@@ -141,7 +141,7 @@ void GFX_3D_Renderer_RenderBegin(GFX_3D_Renderer *renderer)
     GFX_GL_CheckError();
 }
 
-void GFX_3D_Renderer_RenderEnd(GFX_3D_Renderer *renderer)
+void GFX_3D_Renderer_RenderEnd(GFX_3D_RENDERER *renderer)
 {
     assert(renderer);
     GFX_3D_VertexStream_RenderPending(&renderer->vertex_stream);
@@ -149,19 +149,19 @@ void GFX_3D_Renderer_RenderEnd(GFX_3D_Renderer *renderer)
     GFX_GL_CheckError();
 }
 
-void GFX_3D_Renderer_ClearDepth(GFX_3D_Renderer *renderer)
+void GFX_3D_Renderer_ClearDepth(GFX_3D_RENDERER *renderer)
 {
     GFX_3D_VertexStream_RenderPending(&renderer->vertex_stream);
     glClear(GL_DEPTH_BUFFER_BIT);
     GFX_GL_CheckError();
 }
 
-int GFX_3D_Renderer_RegisterEnvironmentMap(GFX_3D_Renderer *const renderer)
+int GFX_3D_Renderer_RegisterEnvironmentMap(GFX_3D_RENDERER *const renderer)
 {
     assert(renderer != NULL);
     assert(renderer->env_map_texture == NULL);
 
-    GFX_GL_Texture *texture = GFX_GL_Texture_Create(GL_TEXTURE_2D);
+    GFX_GL_TEXTURE *texture = GFX_GL_Texture_Create(GL_TEXTURE_2D);
     renderer->env_map_texture = texture;
 
     GFX_3D_Renderer_RestoreTexture(renderer);
@@ -170,11 +170,11 @@ int GFX_3D_Renderer_RegisterEnvironmentMap(GFX_3D_Renderer *const renderer)
 }
 
 bool GFX_3D_Renderer_UnregisterEnvironmentMap(
-    GFX_3D_Renderer *const renderer, const int texture_num)
+    GFX_3D_RENDERER *const renderer, const int texture_num)
 {
     assert(renderer != NULL);
 
-    GFX_GL_Texture *const texture = renderer->env_map_texture;
+    GFX_GL_TEXTURE *const texture = renderer->env_map_texture;
     if (texture == NULL) {
         LOG_ERROR("No environment map registered");
         return false;
@@ -196,11 +196,11 @@ bool GFX_3D_Renderer_UnregisterEnvironmentMap(
     return true;
 }
 
-void GFX_3D_Renderer_FillEnvironmentMap(GFX_3D_Renderer *const renderer)
+void GFX_3D_Renderer_FillEnvironmentMap(GFX_3D_RENDERER *const renderer)
 {
     assert(renderer != NULL);
 
-    GFX_GL_Texture *const env_map = renderer->env_map_texture;
+    GFX_GL_TEXTURE *const env_map = renderer->env_map_texture;
     if (env_map != NULL) {
         GFX_3D_VertexStream_RenderPending(&renderer->vertex_stream);
         GFX_GL_Texture_LoadFromBackBuffer(env_map);
@@ -209,11 +209,11 @@ void GFX_3D_Renderer_FillEnvironmentMap(GFX_3D_Renderer *const renderer)
 }
 
 int GFX_3D_Renderer_RegisterTexturePage(
-    GFX_3D_Renderer *renderer, const void *data, int width, int height)
+    GFX_3D_RENDERER *renderer, const void *data, int width, int height)
 {
     assert(renderer);
     assert(data);
-    GFX_GL_Texture *texture = GFX_GL_Texture_Create(GL_TEXTURE_2D);
+    GFX_GL_TEXTURE *texture = GFX_GL_Texture_Create(GL_TEXTURE_2D);
     GFX_GL_Texture_Load(texture, data, width, height, GL_RGBA, GL_RGBA);
 
     int texture_num = GFX_NO_TEXTURE;
@@ -232,13 +232,13 @@ int GFX_3D_Renderer_RegisterTexturePage(
 }
 
 bool GFX_3D_Renderer_UnregisterTexturePage(
-    GFX_3D_Renderer *renderer, int texture_num)
+    GFX_3D_RENDERER *renderer, int texture_num)
 {
     assert(renderer);
     assert(texture_num >= 0);
     assert(texture_num < GFX_MAX_TEXTURES);
 
-    GFX_GL_Texture *texture = renderer->textures[texture_num];
+    GFX_GL_TEXTURE *texture = renderer->textures[texture_num];
     if (!texture) {
         LOG_ERROR("Invalid texture handle");
         return false;
@@ -256,7 +256,7 @@ bool GFX_3D_Renderer_UnregisterTexturePage(
 }
 
 void GFX_3D_Renderer_RenderPrimStrip(
-    GFX_3D_Renderer *renderer, GFX_3D_Vertex *vertices, int count)
+    GFX_3D_RENDERER *renderer, GFX_3D_VERTEX *vertices, int count)
 {
     assert(renderer);
     assert(vertices);
@@ -265,7 +265,7 @@ void GFX_3D_Renderer_RenderPrimStrip(
 }
 
 void GFX_3D_Renderer_RenderPrimFan(
-    GFX_3D_Renderer *renderer, GFX_3D_Vertex *vertices, int count)
+    GFX_3D_RENDERER *renderer, GFX_3D_VERTEX *vertices, int count)
 {
     assert(renderer);
     assert(vertices);
@@ -273,14 +273,14 @@ void GFX_3D_Renderer_RenderPrimFan(
 }
 
 void GFX_3D_Renderer_RenderPrimList(
-    GFX_3D_Renderer *renderer, GFX_3D_Vertex *vertices, int count)
+    GFX_3D_RENDERER *renderer, GFX_3D_VERTEX *vertices, int count)
 {
     assert(renderer);
     assert(vertices);
     GFX_3D_VertexStream_PushPrimList(&renderer->vertex_stream, vertices, count);
 }
 
-void GFX_3D_Renderer_SelectTexture(GFX_3D_Renderer *renderer, int texture_num)
+void GFX_3D_Renderer_SelectTexture(GFX_3D_RENDERER *renderer, int texture_num)
 {
     assert(renderer);
     GFX_3D_VertexStream_RenderPending(&renderer->vertex_stream);
@@ -288,14 +288,14 @@ void GFX_3D_Renderer_SelectTexture(GFX_3D_Renderer *renderer, int texture_num)
     M_SelectTextureImpl(renderer, texture_num);
 }
 
-void GFX_3D_Renderer_RestoreTexture(GFX_3D_Renderer *renderer)
+void GFX_3D_Renderer_RestoreTexture(GFX_3D_RENDERER *renderer)
 {
     assert(renderer);
     M_SelectTextureImpl(renderer, renderer->selected_texture_num);
 }
 
 void GFX_3D_Renderer_SetPrimType(
-    GFX_3D_Renderer *renderer, GFX_3D_PrimType value)
+    GFX_3D_RENDERER *renderer, GFX_3D_PRIM_TYPE value)
 {
     assert(renderer);
     GFX_3D_VertexStream_RenderPending(&renderer->vertex_stream);
@@ -303,7 +303,7 @@ void GFX_3D_Renderer_SetPrimType(
 }
 
 void GFX_3D_Renderer_SetTextureFilter(
-    GFX_3D_Renderer *renderer, GFX_TEXTURE_FILTER filter)
+    GFX_3D_RENDERER *renderer, GFX_TEXTURE_FILTER filter)
 {
     assert(renderer);
     GFX_3D_VertexStream_RenderPending(&renderer->vertex_stream);
@@ -319,7 +319,7 @@ void GFX_3D_Renderer_SetTextureFilter(
 }
 
 void GFX_3D_Renderer_SetDepthTestEnabled(
-    GFX_3D_Renderer *renderer, bool is_enabled)
+    GFX_3D_RENDERER *renderer, bool is_enabled)
 {
     assert(renderer);
     GFX_3D_VertexStream_RenderPending(&renderer->vertex_stream);
@@ -331,26 +331,26 @@ void GFX_3D_Renderer_SetDepthTestEnabled(
 }
 
 void GFX_3D_Renderer_SetBlendingMode(
-    GFX_3D_Renderer *const renderer, const GFX_BlendMode blend_mode)
+    GFX_3D_RENDERER *const renderer, const GFX_BLEND_MODE blend_mode)
 {
     assert(renderer != NULL);
     GFX_3D_VertexStream_RenderPending(&renderer->vertex_stream);
 
     switch (blend_mode) {
-    case GFX_BlendMode_Off:
+    case GFX_BLEND_MODE_OFF:
         glBlendFunc(GL_ONE, GL_ZERO);
         break;
-    case GFX_BlendMode_Normal:
+    case GFX_BLEND_MODE_NORMAL:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         break;
-    case GFX_BlendMode_Multiply:
+    case GFX_BLEND_MODE_MULTIPLY:
         glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
         break;
     }
 }
 
 void GFX_3D_Renderer_SetTexturingEnabled(
-    GFX_3D_Renderer *renderer, bool is_enabled)
+    GFX_3D_RENDERER *renderer, bool is_enabled)
 {
     assert(renderer);
     GFX_3D_VertexStream_RenderPending(&renderer->vertex_stream);

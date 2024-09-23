@@ -6,7 +6,7 @@
 
 #include <assert.h>
 
-void GFX_2D_Renderer_Init(GFX_2D_Renderer *renderer)
+void GFX_2D_Renderer_Init(GFX_2D_RENDERER *renderer)
 {
     LOG_INFO("");
     assert(renderer);
@@ -47,7 +47,7 @@ void GFX_2D_Renderer_Init(GFX_2D_Renderer *renderer)
     GFX_GL_CheckError();
 }
 
-void GFX_2D_Renderer_Close(GFX_2D_Renderer *renderer)
+void GFX_2D_Renderer_Close(GFX_2D_RENDERER *renderer)
 {
     LOG_INFO("");
     assert(renderer);
@@ -60,7 +60,7 @@ void GFX_2D_Renderer_Close(GFX_2D_Renderer *renderer)
 }
 
 void GFX_2D_Renderer_Upload(
-    GFX_2D_Renderer *renderer, GFX_2D_SurfaceDesc *desc, const uint8_t *data)
+    GFX_2D_RENDERER *renderer, GFX_2D_SURFACE_DESC *desc, const uint8_t *data)
 {
     const uint32_t width = desc->width;
     const uint32_t height = desc->height;
@@ -85,7 +85,7 @@ void GFX_2D_Renderer_Upload(
     }
 }
 
-void GFX_2D_Renderer_Render(GFX_2D_Renderer *renderer)
+void GFX_2D_Renderer_Render(GFX_2D_RENDERER *renderer)
 {
     GFX_GL_Program_Bind(&renderer->program);
     GFX_GL_Buffer_Bind(&renderer->surface_buffer);

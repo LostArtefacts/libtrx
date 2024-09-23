@@ -36,5 +36,5 @@ void GFX_Context_ScheduleScreenshot(const char *path);
 const char *GFX_Context_GetScheduledScreenshotPath(void);
 void GFX_Context_ClearScheduledScreenshotPath(void);
 
-GFX_2D_Renderer *GFX_Context_GetRenderer2D(void);
-GFX_3D_Renderer *GFX_Context_GetRenderer3D(void);
+GFX_2D_RENDERER *GFX_Context_GetRenderer2D(void);
+GFX_3D_RENDERER *GFX_Context_GetRenderer3D(void);

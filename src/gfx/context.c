@@ -24,9 +24,9 @@ typedef struct {
     int32_t window_height;
 
     char *scheduled_screenshot_path;
-    GFX_Renderer *renderer;
-    GFX_2D_Renderer renderer_2d;
-    GFX_3D_Renderer renderer_3d;
+    GFX_RENDERER *renderer;
+    GFX_2D_RENDERER renderer_2d;
+    GFX_3D_RENDERER renderer_3d;
 } GFX_CONTEXT;
 
 static GFX_CONTEXT m_Context = { 0 };
@@ -318,12 +318,12 @@ void GFX_Context_ClearScheduledScreenshotPath(void)
     Memory_FreePointer(&m_Context.scheduled_screenshot_path);
 }
 
-GFX_2D_Renderer *GFX_Context_GetRenderer2D(void)
+GFX_2D_RENDERER *GFX_Context_GetRenderer2D(void)
 {
     return &m_Context.renderer_2d;
 }
 
-GFX_3D_Renderer *GFX_Context_GetRenderer3D(void)
+GFX_3D_RENDERER *GFX_Context_GetRenderer3D(void)
 {
     return &m_Context.renderer_3d;
 }

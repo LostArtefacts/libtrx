@@ -8,4 +8,4 @@ typedef struct GFX_Renderer {
     void (*reset)(struct GFX_Renderer *renderer);
     void (*swap_buffers)(struct GFX_Renderer *renderer);
     void *priv;
-} GFX_Renderer;
+} GFX_RENDERER;
