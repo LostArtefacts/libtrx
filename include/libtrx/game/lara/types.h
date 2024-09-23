@@ -36,7 +36,7 @@ typedef struct __PACKING {
     LARA_GUN_TYPE holsters_gun_type;
     LARA_GUN_TYPE back_gun_type;
     int16_t calc_fall_speed;
-    int16_t water_status;
+    LARA_WATER_STATE water_status;
     int16_t pose_count;
     int16_t hit_frame;
     int16_t hit_direction;
