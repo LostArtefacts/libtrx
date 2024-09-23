@@ -227,7 +227,10 @@ COMMAND_RESULT Console_Cmd_Config_Helper(
         if (M_GetCurrentValue(option, cur_value, 128)) {
             Console_Log(GS(OSD_CONFIG_OPTION_GET), normalized_name, cur_value);
             result = CR_SUCCESS;
+        } else {
+            result = CR_FAILURE;
         }
+        return result;
     }
 
     if (M_SetCurrentValue(option, new_value)) {
