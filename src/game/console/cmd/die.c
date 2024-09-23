@@ -6,11 +6,16 @@
 #include "game/objects/common.h"
 #include "game/objects/ids.h"
 #include "game/sound.h"
+#include "strings.h"
 
 static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *ctx);
 
 static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 {
+    if (!String_IsEmpty(ctx->args)) {
+        return CR_BAD_INVOCATION;
+    }
+
     if (!Object_GetObject(O_LARA)->loaded) {
         return CR_UNAVAILABLE;
     }

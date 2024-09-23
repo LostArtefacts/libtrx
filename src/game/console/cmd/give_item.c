@@ -49,7 +49,7 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
         args++;
     }
 
-    if (String_Equivalent(args, "")) {
+    if (String_IsEmpty(ctx->args)) {
         return CR_BAD_INVOCATION;
     }
 

@@ -173,13 +173,11 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
         return CR_UNAVAILABLE;
     }
 
-    // X Y Z
     float x, y, z;
     if (sscanf(ctx->args, "%f %f %f", &x, &y, &z) == 3) {
         return M_TeleportToXYZ(x, y, z);
     }
 
-    // Room number
     int16_t room_num = -1;
     if (sscanf(ctx->args, "%hd", &room_num) == 1) {
         return M_TeleportToRoom(room_num);
