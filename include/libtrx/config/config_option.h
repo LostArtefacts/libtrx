@@ -1,6 +1,6 @@
 #pragma once
 
-typedef enum CONFIG_OPTION_TYPE {
+typedef enum {
     COT_BOOL = 0,
     COT_INT32 = 1,
     COT_FLOAT = 2,

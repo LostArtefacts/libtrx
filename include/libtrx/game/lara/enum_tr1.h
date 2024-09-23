@@ -1,7 +1,7 @@
 #pragma once
 
 // clang-format off
-typedef enum LARA_SHOTGUN_ANIMATION_FRAME {
+typedef enum {
     LF_SG_AIM_START           = 0,
     LF_SG_AIM_BEND            = 1,
     LF_SG_AIM_END             = 12,
@@ -24,7 +24,7 @@ typedef enum LARA_SHOTGUN_ANIMATION_FRAME {
 // clang-format on
 
 // clang-format off
-typedef enum LARA_GUN_ANIMATION_FRAME {
+typedef enum {
     LF_G_AIM_START    = 0,
     LF_G_AIM_BEND     = 1,
     LF_G_AIM_EXTEND   = 3,
@@ -40,7 +40,7 @@ typedef enum LARA_GUN_ANIMATION_FRAME {
 // clang-format on
 
 // clang-format off
-typedef enum LARA_ANIMATION {
+typedef enum {
     LA_RUN                  = 0,
     LA_WALK_FORWARD         = 1,
     LA_RUN_START            = 6,
@@ -93,7 +93,7 @@ typedef enum LARA_ANIMATION {
 } LARA_ANIMATION;
 
 // clang-format off
-typedef enum LARA_STATE {
+typedef enum {
     LS_WALK         = 0,
     LS_RUN          = 1,
     LS_STOP         = 2,
@@ -157,7 +157,7 @@ typedef enum LARA_STATE {
 // clang-format on
 
 // clang-format off
-typedef enum LARA_GUN_TYPE {
+typedef enum {
     LGT_UNKNOWN = -1, // for legacy saves
     LGT_UNARMED = 0,
     LGT_PISTOLS = 1,

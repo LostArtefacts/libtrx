@@ -4,7 +4,7 @@
 #include "utils.h"
 
 void Item_TakeDamage(
-    ITEM_INFO *const item, const int16_t damage, const bool hit_status)
+    ITEM *const item, const int16_t damage, const bool hit_status)
 {
 #if TR_VERSION == 1
     if (item->hit_points == DONT_TARGET) {

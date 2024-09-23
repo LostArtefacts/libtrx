@@ -25,7 +25,7 @@ typedef enum {
 } LARA_GUN_STATE;
 // clang-format on
 
-typedef enum LARA_MESH {
+typedef enum {
     LM_HIPS = 0,
     LM_THIGH_L = 1,
     LM_CALF_L = 2,

@@ -4,7 +4,7 @@
 
 #include <stdbool.h>
 
-ITEM_INFO *Item_Get(int16_t num);
+ITEM *Item_Get(int16_t num);
 int32_t Item_GetTotalCount(void);
-int32_t Item_GetDistance(const ITEM_INFO *item, const XYZ_32 *target);
-void Item_TakeDamage(ITEM_INFO *item, int16_t damage, bool hit_status);
+int32_t Item_GetDistance(const ITEM *item, const XYZ_32 *target);
+void Item_TakeDamage(ITEM *item, int16_t damage, bool hit_status);

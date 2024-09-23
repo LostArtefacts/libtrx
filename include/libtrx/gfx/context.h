@@ -8,8 +8,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct GFX_CONTEXT GFX_CONTEXT;
-
 void GFX_Context_Attach(void *window_handle);
 void GFX_Context_Detach(void);
 

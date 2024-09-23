@@ -12,7 +12,7 @@
 #define json_uintmax_t uintmax_t
 #define json_strtoumax strtoumax
 
-enum json_type_e {
+typedef enum {
     json_type_string,
     json_type_number,
     json_type_object,
@@ -20,7 +20,7 @@ enum json_type_e {
     json_type_true,
     json_type_false,
     json_type_null
-};
+} json_type_e;
 
 struct json_string_s {
     char *string;
@@ -172,7 +172,7 @@ struct json_value_s *json_value_from_object(struct json_object_s *obj);
 
 void json_value_free(struct json_value_s *value);
 
-enum json_parse_error_e {
+typedef enum {
     json_parse_error_none = 0,
     json_parse_error_expected_comma_or_closing_bracket,
     json_parse_error_expected_colon,
@@ -185,7 +185,7 @@ enum json_parse_error_e {
     json_parse_error_allocator_failed,
     json_parse_error_unexpected_trailing_characters,
     json_parse_error_unknown
-};
+} json_parse_error_e;
 
 struct json_parse_result_s {
     size_t error;
@@ -194,7 +194,7 @@ struct json_parse_result_s {
     size_t error_row_no;
 };
 
-enum json_parse_flags_e {
+typedef enum {
     json_parse_flags_default = 0,
 
     /* allow trailing commas in objects and arrays. For example, both [true,]
@@ -267,7 +267,7 @@ enum json_parse_flags_e {
          | json_parse_flags_allow_leading_or_trailing_decimal_point
          | json_parse_flags_allow_inf_and_nan
          | json_parse_flags_allow_multi_line_strings)
-};
+} json_parse_flags_e;
 
 /* Parse a JSON text file, returning a pointer to the root of the JSON
  * structure. json_parse performs 1 call to malloc for the entire encoding.
@@ -285,7 +285,7 @@ struct json_value_s *json_parse_ex(
     void *(*alloc_func_ptr)(void *, size_t), void *user_data,
     struct json_parse_result_s *result);
 
-const char *json_get_error_description(enum json_parse_error_e error);
+const char *json_get_error_description(json_parse_error_e error);
 
 /* Write out a minified JSON utf-8 string. This string is an encoding of the
  * minimal string characters required to still encode the same data.

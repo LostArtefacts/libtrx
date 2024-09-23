@@ -24,7 +24,7 @@
 #include <string.h>
 #include <time.h>
 
-typedef struct AUDIO_SAMPLE {
+typedef struct {
     char *original_data;
     size_t original_size;
 
@@ -33,7 +33,7 @@ typedef struct AUDIO_SAMPLE {
     int32_t num_samples;
 } AUDIO_SAMPLE;
 
-typedef struct AUDIO_SAMPLE_SOUND {
+typedef struct {
     bool is_used;
     bool is_looped;
     bool is_playing;
@@ -50,7 +50,7 @@ typedef struct AUDIO_SAMPLE_SOUND {
     AUDIO_SAMPLE *sample;
 } AUDIO_SAMPLE_SOUND;
 
-typedef struct AUDIO_AV_BUFFER {
+typedef struct {
     const char *data;
     const char *ptr;
     int32_t size;

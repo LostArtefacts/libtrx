@@ -2,7 +2,7 @@
 
 #include "../gl/gl_core_3_3.h"
 
-typedef struct GFX_GL_Texture {
+typedef struct {
     GLuint id;
     GLenum target;
 } GFX_GL_Texture;

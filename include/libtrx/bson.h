@@ -2,16 +2,16 @@
 
 #include "json.h"
 
-enum bson_parse_error_e {
+typedef enum {
     bson_parse_error_none = 0,
     bson_parse_error_invalid_value,
     bson_parse_error_premature_end_of_buffer,
     bson_parse_error_unexpected_trailing_bytes,
     bson_parse_error_unknown,
-};
+} bson_parse_error_e;
 
 struct bson_parse_result_s {
-    enum bson_parse_error_e error;
+    bson_parse_error_e error;
     size_t error_offset;
 };
 
@@ -22,7 +22,7 @@ struct json_value_s *bson_parse(const char *src, size_t src_size);
 struct json_value_s *bson_parse_ex(
     const char *src, size_t src_size, struct bson_parse_result_s *result);
 
-const char *bson_get_error_description(enum bson_parse_error_e error);
+const char *bson_get_error_description(bson_parse_error_e error);
 
 /* Write out a BSON binary string. Return 0 if an error occurred (malformed
  * JSON input, or malloc failed). The out_size parameter is optional. */

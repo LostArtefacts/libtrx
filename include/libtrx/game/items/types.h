@@ -78,4 +78,4 @@ typedef struct __PACKING {
         } result, prev;
     } interp;
 #endif
-} ITEM_INFO;
+} ITEM;

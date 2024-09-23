@@ -6,19 +6,19 @@
 #include <stdbool.h>
 
 #if TR_VERSION == 1
-typedef struct {
+typedef struct __PACKING {
     TRIGGER_OBJECT type;
     void *parameter;
 } TRIGGER_CMD;
 
-typedef struct {
+typedef struct __PACKING {
     int16_t camera_num;
     uint8_t timer;
     uint8_t glide;
     bool one_shot;
 } TRIGGER_CAMERA_DATA;
 
-typedef struct {
+typedef struct __PACKING {
     TRIGGER_TYPE type;
     int8_t timer;
     int16_t mask;
@@ -32,7 +32,7 @@ typedef struct __PACKING {
     int16_t room_num;
     XYZ_16 normal;
     XYZ_16 vertex[4];
-} DOOR_INFO;
+} PORTAL;
 
 #elif TR_VERSION == 2
 typedef struct __PACKING {
@@ -41,13 +41,13 @@ typedef struct __PACKING {
     int16_t y;
     int16_t z;
     XYZ_16 vertex[4];
-} DOOR_INFO;
+} PORTAL;
 #endif
 
 typedef struct __PACKING {
     uint16_t count;
-    DOOR_INFO door[];
-} DOOR_INFOS;
+    PORTAL portal[];
+} PORTALS;
 
 #if TR_VERSION == 1
 typedef struct __PACKING {
@@ -55,38 +55,38 @@ typedef struct __PACKING {
     int16_t box;
     bool is_death_sector;
     TRIGGER *trigger;
-    struct {
+    struct __PACKING {
         uint8_t pit;
         uint8_t sky;
         int16_t wall;
     } portal_room;
-    struct {
+    struct __PACKING {
         int16_t height;
         int16_t tilt;
     } floor, ceiling;
-} SECTOR_INFO;
+} SECTOR;
 
-typedef struct LIGHT_INFO {
+typedef struct __PACKING {
     XYZ_32 pos;
     int16_t intensity;
     int32_t falloff;
-} LIGHT_INFO;
+} LIGHT;
 
-typedef struct MESH_INFO {
+typedef struct __PACKING {
     XYZ_32 pos;
-    struct {
+    struct __PACKING {
         int16_t y;
     } rot;
     uint16_t shade;
     uint16_t static_num;
-} MESH_INFO;
+} MESH;
 
 typedef struct __PACKING {
     int16_t *data;
-    DOOR_INFOS *doors;
-    SECTOR_INFO *sectors;
-    LIGHT_INFO *light;
-    MESH_INFO *mesh;
+    PORTALS *portals;
+    SECTOR *sectors;
+    LIGHT *light;
+    MESH *mesh;
     int32_t x;
     int32_t y;
     int32_t z;
@@ -106,7 +106,7 @@ typedef struct __PACKING {
     int16_t fx_num;
     int16_t flipped_room;
     uint16_t flags;
-} ROOM_INFO;
+} ROOM;
 
 #elif TR_VERSION == 2
 typedef struct __PACKING {
@@ -116,7 +116,7 @@ typedef struct __PACKING {
     int8_t floor;
     uint8_t sky_room;
     int8_t ceiling;
-} SECTOR_INFO;
+} SECTOR;
 
 typedef struct __PACKING {
     int32_t x;
@@ -126,7 +126,7 @@ typedef struct __PACKING {
     int16_t intensity2;
     int32_t falloff1;
     int32_t falloff2;
-} LIGHT_INFO;
+} LIGHT;
 
 typedef struct __PACKING {
     int32_t x;
@@ -136,14 +136,14 @@ typedef struct __PACKING {
     int16_t shade1;
     int16_t shade2;
     int16_t static_num;
-} MESH_INFO;
+} MESH;
 
 typedef struct __PACKING {
     int16_t *data;
-    DOOR_INFOS *doors;
-    SECTOR_INFO *sector;
-    LIGHT_INFO *light;
-    MESH_INFO *mesh;
+    PORTALS *portals;
+    SECTOR *sector;
+    LIGHT *light;
+    MESH *mesh;
     XYZ_32 pos;
     int32_t min_floor;
     int32_t max_ceiling;
@@ -167,5 +167,5 @@ typedef struct __PACKING {
     int16_t fx_num;
     int16_t flipped_room;
     uint16_t flags;
-} ROOM_INFO;
+} ROOM;
 #endif

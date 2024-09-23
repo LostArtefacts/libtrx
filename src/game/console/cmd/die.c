@@ -21,7 +21,7 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
     }
 
     LARA_INFO *const lara = Lara_GetLaraInfo();
-    ITEM_INFO *const lara_item = Lara_GetItem();
+    ITEM *const lara_item = Lara_GetItem();
     if (lara_item->hit_points <= 0) {
         return CR_UNAVAILABLE;
     }

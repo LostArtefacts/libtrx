@@ -16,7 +16,7 @@ typedef struct {
     GLenum tex_type;
 } GFX_2D_SurfaceDesc;
 
-typedef struct GFX_2D_Surface {
+typedef struct {
     uint8_t *buffer;
     GFX_2D_SurfaceDesc desc;
     bool is_locked;

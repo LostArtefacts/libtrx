@@ -4,7 +4,7 @@
 #include "ids.h"
 
 // clang-format off
-typedef enum SOUND_PLAY_MODE {
+typedef enum {
     SPM_NORMAL     = 0,
     SPM_UNDERWATER = 1,
     SPM_ALWAYS     = 2,

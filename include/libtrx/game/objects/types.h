@@ -20,11 +20,11 @@ typedef struct __PACKING {
     void (*initialise)(int16_t item_num);
     void (*control)(int16_t item_num);
     int16_t (*floor_height_func)(
-        const ITEM_INFO *item, int32_t x, int32_t y, int32_t z, int16_t height);
+        const ITEM *item, int32_t x, int32_t y, int32_t z, int16_t height);
     int16_t (*ceiling_height_func)(
-        const ITEM_INFO *item, int32_t x, int32_t y, int32_t z, int16_t height);
-    void (*draw_routine)(ITEM_INFO *item);
-    void (*collision)(int16_t item_num, ITEM_INFO *lara_item, COLL_INFO *coll);
+        const ITEM *item, int32_t x, int32_t y, int32_t z, int16_t height);
+    void (*draw_routine)(ITEM *item);
+    void (*collision)(int16_t item_num, ITEM *lara_item, COLL_INFO *coll);
     const OBJECT_BOUNDS *(*bounds)(void);
     int16_t anim_idx;
     int16_t hit_points;
@@ -38,7 +38,7 @@ typedef struct __PACKING {
     uint16_t save_hitpoints : 1;
     uint16_t save_flags : 1;
     uint16_t save_anim : 1;
-} OBJECT_INFO;
+} OBJECT;
 
 #elif TR_VERSION == 2
 typedef struct __PACKING {
@@ -50,13 +50,11 @@ typedef struct __PACKING {
     void (*initialise)(int16_t item_num);
     void (*control)(int16_t item_num);
     void (*floor)(
-        const ITEM_INFO *item, int32_t x, int32_t y, int32_t z,
-        int32_t *height);
+        const ITEM *item, int32_t x, int32_t y, int32_t z, int32_t *height);
     void (*ceiling)(
-        const ITEM_INFO *item, int32_t x, int32_t y, int32_t z,
-        int32_t *height);
-    void (*draw_routine)(const ITEM_INFO *item);
-    void (*collision)(int16_t item_num, ITEM_INFO *lara_item, COLL_INFO *coll);
+        const ITEM *item, int32_t x, int32_t y, int32_t z, int32_t *height);
+    void (*draw_routine)(const ITEM *item);
+    void (*collision)(int16_t item_num, ITEM *lara_item, COLL_INFO *coll);
 
     int16_t anim_idx;
     int16_t hit_points;
@@ -80,5 +78,5 @@ typedef struct __PACKING {
         };
         // clang-format on
     };
-} OBJECT_INFO;
+} OBJECT;
 #endif

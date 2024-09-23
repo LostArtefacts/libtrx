@@ -30,7 +30,7 @@ static COMMAND_RESULT M_KillAllEnemies(void)
 {
     int32_t num_killed = 0;
     for (int16_t item_num = 0; item_num < Item_GetTotalCount(); item_num++) {
-        const ITEM_INFO *const item = Item_Get(item_num);
+        const ITEM *const item = Item_Get(item_num);
         if (!Creature_IsEnemy(item)) {
             continue;
         }
@@ -57,8 +57,8 @@ static COMMAND_RESULT M_KillNearestEnemies(void)
             break;
         }
 
-        const ITEM_INFO *const lara_item = Lara_GetItem();
-        const ITEM_INFO *const item = Item_Get(best_item_num);
+        const ITEM *const lara_item = Lara_GetItem();
+        const ITEM *const item = Item_Get(best_item_num);
         const int32_t distance = Item_GetDistance(item, &lara_item->pos);
         found |= Lara_Cheat_KillEnemy(best_item_num);
         if (distance >= WALL_L) {
@@ -84,7 +84,7 @@ static COMMAND_RESULT M_KillEnemyType(const char *const enemy_name)
         Object_IdsFromName(enemy_name, &match_count, M_CanTargetObjectCreature);
 
     for (int16_t item_num = 0; item_num < Item_GetTotalCount(); item_num++) {
-        const ITEM_INFO *const item = Item_Get(item_num);
+        const ITEM *const item = Item_Get(item_num);
 
         bool is_matched = false;
         for (int32_t i = 0; i < match_count; i++) {

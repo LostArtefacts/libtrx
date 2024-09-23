@@ -23,8 +23,8 @@ typedef struct __PACKING {
     LOT_INFO lot;
     XYZ_32 target;
 #if TR_VERSION == 2
-    ITEM_INFO *enemy;
+    ITEM *enemy;
 #endif
-} CREATURE_INFO;
+} CREATURE;
 
-bool Creature_IsEnemy(const ITEM_INFO *item);
+bool Creature_IsEnemy(const ITEM *item);

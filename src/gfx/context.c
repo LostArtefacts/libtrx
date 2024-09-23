@@ -12,7 +12,7 @@
 #include <SDL2/SDL_video.h>
 #include <string.h>
 
-typedef struct GFX_CONTEXT {
+typedef struct {
     SDL_GLContext context;
     SDL_Window *window_handle;
 

@@ -21,7 +21,7 @@ typedef enum {
     GFX_BlendMode_Multiply,
 } GFX_BlendMode;
 
-typedef struct GFX_3D_Renderer {
+typedef struct {
     const GFX_CONFIG *config;
 
     GFX_GL_Program program;

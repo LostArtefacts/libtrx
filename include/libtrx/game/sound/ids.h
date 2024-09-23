@@ -2,7 +2,7 @@
 
 #if TR_VERSION == 1
 // clang-format off
-typedef enum SOUND_EFFECT_ID {
+typedef enum {
     SFX_INVALID               = -1,
     SFX_LARA_FEET             = 0,
     SFX_LARA_CLIMB2           = 1,

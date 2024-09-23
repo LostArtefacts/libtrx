@@ -62,7 +62,7 @@ static COMMAND_RESULT M_TeleportToRoom(const int16_t room_num)
         return CR_FAILURE;
     }
 
-    const ROOM_INFO *const room = Room_Get(room_num);
+    const ROOM *const room = Room_Get(room_num);
 #if TR_VERSION == 1
     const int32_t rx = room->x;
     const int32_t rz = room->z;
@@ -109,12 +109,12 @@ static COMMAND_RESULT M_TeleportToObject(const char *const user_input)
     GAME_OBJECT_ID *matching_objs =
         Object_IdsFromName(user_input, &match_count, M_CanTargetObject);
 
-    const ITEM_INFO *const lara_item = Lara_GetItem();
-    const ITEM_INFO *best_item = NULL;
+    const ITEM *const lara_item = Lara_GetItem();
+    const ITEM *best_item = NULL;
     int32_t best_distance = INT32_MAX;
 
     for (int16_t item_num = 0; item_num < Item_GetTotalCount(); item_num++) {
-        const ITEM_INFO *const item = Item_Get(item_num);
+        const ITEM *const item = Item_Get(item_num);
         if (Object_IsObjectType(item->object_id, g_PickupObjects)
             && (item->status == IS_INVISIBLE || item->status == IS_DEACTIVATED
                 || item->room_num == NO_ROOM)) {
@@ -168,7 +168,7 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
         return CR_UNAVAILABLE;
     }
 
-    const ITEM_INFO *const lara_item = Lara_GetItem();
+    const ITEM *const lara_item = Lara_GetItem();
     if (!lara_item->hit_points) {
         return CR_UNAVAILABLE;
     }

@@ -1761,7 +1761,7 @@ struct json_value_s *json_parse_ex(
     return (struct json_value_s *)allocation;
 }
 
-const char *json_get_error_description(enum json_parse_error_e error)
+const char *json_get_error_description(json_parse_error_e error)
 {
     switch (error) {
     case json_parse_error_none:

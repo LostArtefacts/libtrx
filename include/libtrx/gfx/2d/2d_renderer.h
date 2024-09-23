@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct GFX_2D_Renderer {
+typedef struct {
     uint32_t width;
     uint32_t height;
     GFX_GL_VertexArray surface_format;

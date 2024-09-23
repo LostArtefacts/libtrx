@@ -5,7 +5,7 @@
 
 #include <stdbool.h>
 
-typedef struct GFX_GL_Program {
+typedef struct {
     GLuint id;
 } GFX_GL_Program;
 

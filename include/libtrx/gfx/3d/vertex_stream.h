@@ -17,7 +17,7 @@ typedef struct {
     float r, g, b, a;
 } GFX_3D_Vertex;
 
-typedef struct GFX_3D_VertexStream {
+typedef struct {
     GFX_3D_PrimType prim_type;
     size_t buffer_size;
     GFX_GL_Buffer buffer;

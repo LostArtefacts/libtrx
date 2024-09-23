@@ -28,7 +28,7 @@
 #define READ_BUFFER_SIZE                                                       \
     (AUDIO_SAMPLES * AUDIO_WORKING_CHANNELS * sizeof(AUDIO_WORKING_FORMAT))
 
-typedef struct AUDIO_STREAM_SOUND {
+typedef struct {
     bool is_used;
     bool is_playing;
     bool is_read_done;

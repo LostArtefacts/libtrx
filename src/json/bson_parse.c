@@ -695,7 +695,7 @@ struct json_value_s *bson_parse_ex(
     return value;
 }
 
-const char *bson_get_error_description(enum bson_parse_error_e error)
+const char *bson_get_error_description(bson_parse_error_e error)
 {
     switch (error) {
     case bson_parse_error_none:

@@ -45,10 +45,10 @@ typedef struct __PACKING {
     int16_t death_timer;
     int16_t current_active;
     int16_t spaz_effect_count;
-    FX_INFO *spaz_effect;
+    FX *spaz_effect;
     int32_t mesh_effects;
     int16_t *mesh_ptrs[LM_NUMBER_OF];
-    ITEM_INFO *target;
+    ITEM *target;
     int16_t target_angles[2];
     int16_t turn_rate;
     int16_t move_angle;
@@ -125,10 +125,10 @@ typedef struct __PACKING {
     // clang-format on
     int32_t water_surface_dist;
     XYZ_32 last_pos;
-    FX_INFO *spaz_effect;
+    FX *spaz_effect;
     uint32_t mesh_effects;
     int16_t *mesh_ptrs[15];
-    ITEM_INFO *target;
+    ITEM *target;
     int16_t target_angles[2];
     int16_t turn_rate;
     int16_t move_angle;
@@ -147,7 +147,7 @@ typedef struct __PACKING {
     AMMO_INFO harpoon_ammo;
     AMMO_INFO grenade_ammo;
     AMMO_INFO m16_ammo;
-    CREATURE_INFO *creature;
+    CREATURE *creature;
 } LARA_INFO;
 
 #endif

@@ -15,12 +15,12 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
         return CR_BAD_INVOCATION;
     }
 
-    const OBJECT_INFO *const object = Object_GetObject(O_LARA);
+    const OBJECT *const object = Object_GetObject(O_LARA);
     if (!object->loaded) {
         return CR_UNAVAILABLE;
     }
 
-    const ITEM_INFO *const lara_item = Lara_GetItem();
+    const ITEM *const lara_item = Lara_GetItem();
 
     // clang-format off
     Console_Log(
