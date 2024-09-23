@@ -7,50 +7,49 @@
 #include <string.h>
 
 static bool M_ReadFromJSON(
-    const char *json, void (*load)(struct json_object_s *root_obj));
-static char *M_WriteToJSON(void (*dump)(struct json_object_s *root_obj));
+    const char *json, void (*load)(JSON_OBJECT *root_obj));
+static char *M_WriteToJSON(void (*dump)(JSON_OBJECT *root_obj));
 static const char *M_ResolveOptionName(const char *option_name);
 
 static bool M_ReadFromJSON(
-    const char *cfg_data, void (*load)(struct json_object_s *root_obj))
+    const char *cfg_data, void (*load)(JSON_OBJECT *root_obj))
 {
     bool result = false;
-    struct json_value_s *root;
-    struct json_parse_result_s parse_result;
 
-    root = json_parse_ex(
-        cfg_data, strlen(cfg_data), json_parse_flags_allow_json5, NULL, NULL,
+    JSON_PARSE_RESULT parse_result;
+    JSON_VALUE *root = JSON_ParseEx(
+        cfg_data, strlen(cfg_data), JSON_PARSE_FLAGS_ALLOW_JSON5, NULL, NULL,
         &parse_result);
-    if (root) {
+    if (root != NULL) {
         result = true;
     } else {
         LOG_ERROR(
             "failed to parse config file: %s in line %d, char %d",
-            json_get_error_description(parse_result.error),
+            JSON_GetErrorDescription(parse_result.error),
             parse_result.error_line_no, parse_result.error_row_no);
         // continue to supply the default values
     }
 
-    struct json_object_s *root_obj = json_value_as_object(root);
+    JSON_OBJECT *root_obj = JSON_ValueAsObject(root);
     load(root_obj);
 
     if (root) {
-        json_value_free(root);
+        JSON_ValueFree(root);
     }
 
     return result;
 }
 
-static char *M_WriteToJSON(void (*dump)(struct json_object_s *root_obj))
+static char *M_WriteToJSON(void (*dump)(JSON_OBJECT *root_obj))
 {
-    struct json_object_s *root_obj = json_object_new();
+    JSON_OBJECT *root_obj = JSON_ObjectNew();
 
     dump(root_obj);
 
-    struct json_value_s *root = json_value_from_object(root_obj);
+    JSON_VALUE *root = JSON_ValueFromObject(root_obj);
     size_t size;
-    char *data = json_write_pretty(root, "  ", "\n", &size);
-    json_value_free(root);
+    char *data = JSON_WritePretty(root, "  ", "\n", &size);
+    JSON_ValueFree(root);
 
     return data;
 }
@@ -64,8 +63,7 @@ static const char *M_ResolveOptionName(const char *option_name)
     return option_name;
 }
 
-bool ConfigFile_Read(
-    const char *path, void (*load)(struct json_object_s *root_obj))
+bool ConfigFile_Read(const char *path, void (*load)(JSON_OBJECT *root_obj))
 {
     bool result = false;
     char *cfg_data = NULL;
@@ -81,8 +79,7 @@ bool ConfigFile_Read(
     return result;
 }
 
-bool ConfigFile_Write(
-    const char *path, void (*dump)(struct json_object_s *root_obj))
+bool ConfigFile_Write(const char *path, void (*dump)(JSON_OBJECT *root_obj))
 {
     LOG_INFO("Saving user settings");
 
@@ -99,32 +96,31 @@ bool ConfigFile_Write(
     return true;
 }
 
-void ConfigFile_LoadOptions(
-    struct json_object_s *root_obj, const CONFIG_OPTION *options)
+void ConfigFile_LoadOptions(JSON_OBJECT *root_obj, const CONFIG_OPTION *options)
 {
     const CONFIG_OPTION *opt = options;
     while (opt->target) {
         switch (opt->type) {
         case COT_BOOL:
-            *(bool *)opt->target = json_object_get_bool(
+            *(bool *)opt->target = JSON_ObjectGetBool(
                 root_obj, M_ResolveOptionName(opt->name),
                 *(bool *)opt->default_value);
             break;
 
         case COT_INT32:
-            *(int32_t *)opt->target = json_object_get_int(
+            *(int32_t *)opt->target = JSON_ObjectGetInt(
                 root_obj, M_ResolveOptionName(opt->name),
                 *(int32_t *)opt->default_value);
             break;
 
         case COT_FLOAT:
-            *(float *)opt->target = json_object_get_double(
+            *(float *)opt->target = JSON_ObjectGetDouble(
                 root_obj, M_ResolveOptionName(opt->name),
                 *(float *)opt->default_value);
             break;
 
         case COT_DOUBLE:
-            *(double *)opt->target = json_object_get_double(
+            *(double *)opt->target = JSON_ObjectGetDouble(
                 root_obj, M_ResolveOptionName(opt->name),
                 *(double *)opt->default_value);
             break;
@@ -139,31 +135,30 @@ void ConfigFile_LoadOptions(
     }
 }
 
-void ConfigFile_DumpOptions(
-    struct json_object_s *root_obj, const CONFIG_OPTION *options)
+void ConfigFile_DumpOptions(JSON_OBJECT *root_obj, const CONFIG_OPTION *options)
 {
     const CONFIG_OPTION *opt = options;
     while (opt->target) {
         switch (opt->type) {
         case COT_BOOL:
-            json_object_append_bool(
+            JSON_ObjectAppendBool(
                 root_obj, M_ResolveOptionName(opt->name), *(bool *)opt->target);
             break;
 
         case COT_INT32:
-            json_object_append_int(
+            JSON_ObjectAppendInt(
                 root_obj, M_ResolveOptionName(opt->name),
                 *(int32_t *)opt->target);
             break;
 
         case COT_FLOAT:
-            json_object_append_double(
+            JSON_ObjectAppendDouble(
                 root_obj, M_ResolveOptionName(opt->name),
                 *(float *)opt->target);
             break;
 
         case COT_DOUBLE:
-            json_object_append_double(
+            JSON_ObjectAppendDouble(
                 root_obj, M_ResolveOptionName(opt->name),
                 *(double *)opt->target);
             break;
@@ -179,10 +174,10 @@ void ConfigFile_DumpOptions(
 }
 
 int ConfigFile_ReadEnum(
-    struct json_object_s *obj, const char *name, int default_value,
+    JSON_OBJECT *obj, const char *name, int default_value,
     const ENUM_STRING_MAP *enum_map)
 {
-    const char *value_str = json_object_get_string(obj, name, NULL);
+    const char *value_str = JSON_ObjectGetString(obj, name, NULL);
     if (value_str) {
         while (enum_map->text) {
             if (!strcmp(value_str, enum_map->text)) {
@@ -195,12 +190,12 @@ int ConfigFile_ReadEnum(
 }
 
 void ConfigFile_WriteEnum(
-    struct json_object_s *obj, const char *name, int value,
+    JSON_OBJECT *obj, const char *name, int value,
     const ENUM_STRING_MAP *enum_map)
 {
     while (enum_map->text) {
         if (enum_map->value == value) {
-            json_object_append_string(obj, name, enum_map->text);
+            JSON_ObjectAppendString(obj, name, enum_map->text);
             break;
         }
         enum_map++;

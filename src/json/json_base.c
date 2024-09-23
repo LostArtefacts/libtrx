@@ -7,91 +7,91 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct json_string_s *json_value_as_string(struct json_value_s *const value)
+JSON_STRING *JSON_ValueAsString(JSON_VALUE *const value)
 {
-    if (!value || value->type != json_type_string) {
-        return json_null;
+    if (!value || value->type != JSON_TYPE_STRING) {
+        return NULL;
     }
 
-    return (struct json_string_s *)value->payload;
+    return (JSON_STRING *)value->payload;
 }
 
-struct json_number_s *json_value_as_number(struct json_value_s *const value)
+JSON_NUMBER *JSON_ValueAsNumber(JSON_VALUE *const value)
 {
-    if (!value || value->type != json_type_number) {
-        return json_null;
+    if (!value || value->type != JSON_TYPE_NUMBER) {
+        return NULL;
     }
 
-    return (struct json_number_s *)value->payload;
+    return (JSON_NUMBER *)value->payload;
 }
 
-struct json_object_s *json_value_as_object(struct json_value_s *const value)
+JSON_OBJECT *JSON_ValueAsObject(JSON_VALUE *const value)
 {
-    if (!value || value->type != json_type_object) {
-        return json_null;
+    if (!value || value->type != JSON_TYPE_OBJECT) {
+        return NULL;
     }
 
-    return (struct json_object_s *)value->payload;
+    return (JSON_OBJECT *)value->payload;
 }
 
-struct json_array_s *json_value_as_array(struct json_value_s *const value)
+JSON_ARRAY *JSON_ValueAsArray(JSON_VALUE *const value)
 {
-    if (!value || value->type != json_type_array) {
-        return json_null;
+    if (!value || value->type != JSON_TYPE_ARRAY) {
+        return NULL;
     }
 
-    return (struct json_array_s *)value->payload;
+    return (JSON_ARRAY *)value->payload;
 }
 
-int json_value_is_true(const struct json_value_s *const value)
+int JSON_ValueIsTrue(const JSON_VALUE *const value)
 {
-    return value && value->type == json_type_true;
+    return value && value->type == JSON_TYPE_TRUE;
 }
 
-int json_value_is_false(const struct json_value_s *const value)
+int JSON_ValueIsFalse(const JSON_VALUE *const value)
 {
-    return value && value->type == json_type_false;
+    return value && value->type == JSON_TYPE_FALSE;
 }
 
-int json_value_is_null(const struct json_value_s *const value)
+int JSON_ValueIsNull(const JSON_VALUE *const value)
 {
-    return value && value->type == json_type_null;
+    return value && value->type == JSON_TYPE_NULL;
 }
 
-struct json_number_s *json_number_new_int(int number)
+JSON_NUMBER *JSON_NumberNewInt(int number)
 {
     size_t size = snprintf(NULL, 0, "%d", number) + 1;
     char *buf = Memory_Alloc(size);
     sprintf(buf, "%d", number);
-    struct json_number_s *elem = Memory_Alloc(sizeof(struct json_number_s));
+    JSON_NUMBER *elem = Memory_Alloc(sizeof(JSON_NUMBER));
     elem->number = buf;
     elem->number_size = strlen(buf);
     return elem;
 }
 
-struct json_number_s *json_number_new_int64(int64_t number)
+JSON_NUMBER *JSON_NumberNewInt64(int64_t number)
 {
     size_t size = snprintf(NULL, 0, "%" PRId64, number) + 1;
     char *buf = Memory_Alloc(size);
     sprintf(buf, "%" PRId64, number);
-    struct json_number_s *elem = Memory_Alloc(sizeof(struct json_number_s));
+    JSON_NUMBER *elem = Memory_Alloc(sizeof(JSON_NUMBER));
     elem->number = buf;
     elem->number_size = strlen(buf);
     return elem;
 }
 
-struct json_number_s *json_number_new_double(double number)
+JSON_NUMBER *JSON_NumberNewDouble(double number)
 {
     size_t size = snprintf(NULL, 0, "%f", number) + 1;
     char *buf = Memory_Alloc(size);
     sprintf(buf, "%f", number);
-    struct json_number_s *elem = Memory_Alloc(sizeof(struct json_number_s));
+    JSON_NUMBER *elem = Memory_Alloc(sizeof(JSON_NUMBER));
     elem->number = buf;
     elem->number_size = strlen(buf);
     return elem;
 }
 
-void json_number_free(struct json_number_s *num)
+void JSON_NumberFree(JSON_NUMBER *num)
 {
     if (!num->ref_count) {
         Memory_Free(num->number);
@@ -99,15 +99,15 @@ void json_number_free(struct json_number_s *num)
     }
 }
 
-struct json_string_s *json_string_new(const char *string)
+JSON_STRING *JSON_StringNew(const char *string)
 {
-    struct json_string_s *str = Memory_Alloc(sizeof(struct json_string_s));
+    JSON_STRING *str = Memory_Alloc(sizeof(JSON_STRING));
     str->string = Memory_DupStr(string);
     str->string_size = strlen(string);
     return str;
 }
 
-void json_string_free(struct json_string_s *str)
+void JSON_StringFree(JSON_STRING *str)
 {
     if (!str->ref_count) {
         Memory_Free(str->string);
@@ -115,21 +115,21 @@ void json_string_free(struct json_string_s *str)
     }
 }
 
-struct json_array_s *json_array_new(void)
+JSON_ARRAY *JSON_ArrayNew(void)
 {
-    struct json_array_s *arr = Memory_Alloc(sizeof(struct json_array_s));
+    JSON_ARRAY *arr = Memory_Alloc(sizeof(JSON_ARRAY));
     arr->start = NULL;
     arr->length = 0;
     return arr;
 }
 
-void json_array_free(struct json_array_s *arr)
+void JSON_ArrayFree(JSON_ARRAY *arr)
 {
-    struct json_array_element_s *elem = arr->start;
+    JSON_ARRAY_ELEMENT *elem = arr->start;
     while (elem) {
-        struct json_array_element_s *next = elem->next;
-        json_value_free(elem->value);
-        json_array_element_free(elem);
+        JSON_ARRAY_ELEMENT *next = elem->next;
+        JSON_ValueFree(elem->value);
+        JSON_ArrayElementFree(elem);
         elem = next;
     }
     if (!arr->ref_count) {
@@ -137,21 +137,20 @@ void json_array_free(struct json_array_s *arr)
     }
 }
 
-void json_array_element_free(struct json_array_element_s *element)
+void JSON_ArrayElementFree(JSON_ARRAY_ELEMENT *element)
 {
     if (!element->ref_count) {
         Memory_FreePointer(&element);
     }
 }
 
-void json_array_append(struct json_array_s *arr, struct json_value_s *value)
+void JSON_ArrayAppend(JSON_ARRAY *arr, JSON_VALUE *value)
 {
-    struct json_array_element_s *elem =
-        Memory_Alloc(sizeof(struct json_array_element_s));
+    JSON_ARRAY_ELEMENT *elem = Memory_Alloc(sizeof(JSON_ARRAY_ELEMENT));
     elem->value = value;
     elem->next = NULL;
     if (arr->start) {
-        struct json_array_element_s *target = arr->start;
+        JSON_ARRAY_ELEMENT *target = arr->start;
         while (target->next) {
             target = target->next;
         }
@@ -162,127 +161,120 @@ void json_array_append(struct json_array_s *arr, struct json_value_s *value)
     arr->length++;
 }
 
-void json_array_append_bool(struct json_array_s *arr, int b)
+void JSON_ArrayApendBool(JSON_ARRAY *arr, int b)
 {
-    json_array_append(arr, json_value_from_bool(b));
+    JSON_ArrayAppend(arr, JSON_ValueFromBool(b));
 }
 
-void json_array_append_int(struct json_array_s *arr, int number)
+void JSON_ArrayAppendInt(JSON_ARRAY *arr, int number)
 {
-    json_array_append(arr, json_value_from_number(json_number_new_int(number)));
+    JSON_ArrayAppend(arr, JSON_ValueFromNumber(JSON_NumberNewInt(number)));
 }
 
-void json_array_append_double(struct json_array_s *arr, double number)
+void JSON_ArrayAppendDouble(JSON_ARRAY *arr, double number)
 {
-    json_array_append(
-        arr, json_value_from_number(json_number_new_double(number)));
+    JSON_ArrayAppend(arr, JSON_ValueFromNumber(JSON_NumberNewDouble(number)));
 }
 
-void json_array_append_string(struct json_array_s *arr, const char *string)
+void JSON_ArrayAppendString(JSON_ARRAY *arr, const char *string)
 {
-    json_array_append(arr, json_value_from_string(json_string_new(string)));
+    JSON_ArrayAppend(arr, JSON_ValueFromString(JSON_StringNew(string)));
 }
 
-void json_array_append_array(
-    struct json_array_s *arr, struct json_array_s *arr2)
+void JSON_ArrayAppendArray(JSON_ARRAY *arr, JSON_ARRAY *arr2)
 {
-    json_array_append(arr, json_value_from_array(arr2));
+    JSON_ArrayAppend(arr, JSON_ValueFromArray(arr2));
 }
 
-void json_array_append_object(
-    struct json_array_s *arr, struct json_object_s *obj)
+void JSON_ArrayAppendObject(JSON_ARRAY *arr, JSON_OBJECT *obj)
 {
-    json_array_append(arr, json_value_from_object(obj));
+    JSON_ArrayAppend(arr, JSON_ValueFromObject(obj));
 }
 
-struct json_value_s *json_array_get_value(
-    struct json_array_s *arr, const size_t idx)
+JSON_VALUE *JSON_ArrayGetValue(JSON_ARRAY *arr, const size_t idx)
 {
     if (!arr || idx >= arr->length) {
-        return json_null;
+        return NULL;
     }
-    struct json_array_element_s *elem = arr->start;
+    JSON_ARRAY_ELEMENT *elem = arr->start;
     for (size_t i = 0; i < idx; i++) {
         elem = elem->next;
     }
     return elem->value;
 }
 
-int json_array_get_bool(struct json_array_s *arr, const size_t idx, int d)
+int JSON_ArrayGetBool(JSON_ARRAY *arr, const size_t idx, int d)
 {
-    struct json_value_s *value = json_array_get_value(arr, idx);
-    if (json_value_is_true(value)) {
+    JSON_VALUE *value = JSON_ArrayGetValue(arr, idx);
+    if (JSON_ValueIsTrue(value)) {
         return 1;
-    } else if (json_value_is_false(value)) {
+    } else if (JSON_ValueIsFalse(value)) {
         return 0;
     }
     return d;
 }
 
-int json_array_get_int(struct json_array_s *arr, const size_t idx, int d)
+int JSON_ArrayGetInt(JSON_ARRAY *arr, const size_t idx, int d)
 {
-    struct json_value_s *value = json_array_get_value(arr, idx);
-    struct json_number_s *num = json_value_as_number(value);
+    JSON_VALUE *value = JSON_ArrayGetValue(arr, idx);
+    JSON_NUMBER *num = JSON_ValueAsNumber(value);
     if (num) {
         return atoi(num->number);
     }
     return d;
 }
 
-double json_array_get_double(
-    struct json_array_s *arr, const size_t idx, double d)
+double JSON_ArrayGetDouble(JSON_ARRAY *arr, const size_t idx, double d)
 {
-    struct json_value_s *value = json_array_get_value(arr, idx);
-    struct json_number_s *num = json_value_as_number(value);
+    JSON_VALUE *value = JSON_ArrayGetValue(arr, idx);
+    JSON_NUMBER *num = JSON_ValueAsNumber(value);
     if (num) {
         return atof(num->number);
     }
     return d;
 }
 
-const char *json_array_get_string(
-    struct json_array_s *arr, const size_t idx, const char *d)
+const char *JSON_ArrayGetString(
+    JSON_ARRAY *arr, const size_t idx, const char *d)
 {
-    struct json_value_s *value = json_array_get_value(arr, idx);
-    struct json_string_s *str = json_value_as_string(value);
+    JSON_VALUE *value = JSON_ArrayGetValue(arr, idx);
+    JSON_STRING *str = JSON_ValueAsString(value);
     if (str) {
         return str->string;
     }
     return d;
 }
 
-struct json_array_s *json_array_get_array(
-    struct json_array_s *arr, const size_t idx)
+JSON_ARRAY *JSON_ArrayGetArray(JSON_ARRAY *arr, const size_t idx)
 {
-    struct json_value_s *value = json_array_get_value(arr, idx);
-    struct json_array_s *arr2 = json_value_as_array(value);
+    JSON_VALUE *value = JSON_ArrayGetValue(arr, idx);
+    JSON_ARRAY *arr2 = JSON_ValueAsArray(value);
     return arr2;
 }
 
-struct json_object_s *json_array_get_object(
-    struct json_array_s *arr, const size_t idx)
+JSON_OBJECT *JSON_ArrayGetObject(JSON_ARRAY *arr, const size_t idx)
 {
-    struct json_value_s *value = json_array_get_value(arr, idx);
-    struct json_object_s *obj = json_value_as_object(value);
+    JSON_VALUE *value = JSON_ArrayGetValue(arr, idx);
+    JSON_OBJECT *obj = JSON_ValueAsObject(value);
     return obj;
 }
 
-struct json_object_s *json_object_new(void)
+JSON_OBJECT *JSON_ObjectNew(void)
 {
-    struct json_object_s *obj = Memory_Alloc(sizeof(struct json_object_s));
+    JSON_OBJECT *obj = Memory_Alloc(sizeof(JSON_OBJECT));
     obj->start = NULL;
     obj->length = 0;
     return obj;
 }
 
-void json_object_free(struct json_object_s *obj)
+void JSON_ObjectFree(JSON_OBJECT *obj)
 {
-    struct json_object_element_s *elem = obj->start;
+    JSON_OBJECT_ELEMENT *elem = obj->start;
     while (elem) {
-        struct json_object_element_s *next = elem->next;
-        json_string_free(elem->name);
-        json_value_free(elem->value);
-        json_object_element_free(elem);
+        JSON_OBJECT_ELEMENT *next = elem->next;
+        JSON_StringFree(elem->name);
+        JSON_ValueFree(elem->value);
+        JSON_ObjectElementFree(elem);
         elem = next;
     }
     if (!obj->ref_count) {
@@ -290,23 +282,21 @@ void json_object_free(struct json_object_s *obj)
     }
 }
 
-void json_object_element_free(struct json_object_element_s *element)
+void JSON_ObjectElementFree(JSON_OBJECT_ELEMENT *element)
 {
     if (!element->ref_count) {
         Memory_FreePointer(&element);
     }
 }
 
-void json_object_append(
-    struct json_object_s *obj, const char *key, struct json_value_s *value)
+void JSON_ObjectAppend(JSON_OBJECT *obj, const char *key, JSON_VALUE *value)
 {
-    struct json_object_element_s *elem =
-        Memory_Alloc(sizeof(struct json_object_element_s));
-    elem->name = json_string_new(key);
+    JSON_OBJECT_ELEMENT *elem = Memory_Alloc(sizeof(JSON_OBJECT_ELEMENT));
+    elem->name = JSON_StringNew(key);
     elem->value = value;
     elem->next = NULL;
     if (obj->start) {
-        struct json_object_element_s *target = obj->start;
+        JSON_OBJECT_ELEMENT *target = obj->start;
         while (target->next) {
             target = target->next;
         }
@@ -317,58 +307,53 @@ void json_object_append(
     obj->length++;
 }
 
-void json_object_append_bool(struct json_object_s *obj, const char *key, int b)
+void JSON_ObjectAppendBool(JSON_OBJECT *obj, const char *key, int b)
 {
-    json_object_append(obj, key, json_value_from_bool(b));
+    JSON_ObjectAppend(obj, key, JSON_ValueFromBool(b));
 }
 
-void json_object_append_int(
-    struct json_object_s *obj, const char *key, int number)
+void JSON_ObjectAppendInt(JSON_OBJECT *obj, const char *key, int number)
 {
-    json_object_append(
-        obj, key, json_value_from_number(json_number_new_int(number)));
+    JSON_ObjectAppend(
+        obj, key, JSON_ValueFromNumber(JSON_NumberNewInt(number)));
 }
 
-void json_object_append_int64(
-    struct json_object_s *obj, const char *key, int64_t number)
+void JSON_ObjectAppendInt64(JSON_OBJECT *obj, const char *key, int64_t number)
 {
-    json_object_append(
-        obj, key, json_value_from_number(json_number_new_int64(number)));
+    JSON_ObjectAppend(
+        obj, key, JSON_ValueFromNumber(JSON_NumberNewInt64(number)));
 }
 
-void json_object_append_double(
-    struct json_object_s *obj, const char *key, double number)
+void JSON_ObjectAppendDouble(JSON_OBJECT *obj, const char *key, double number)
 {
-    json_object_append(
-        obj, key, json_value_from_number(json_number_new_double(number)));
+    JSON_ObjectAppend(
+        obj, key, JSON_ValueFromNumber(JSON_NumberNewDouble(number)));
 }
 
-void json_object_append_string(
-    struct json_object_s *obj, const char *key, const char *string)
+void JSON_ObjectAppendString(
+    JSON_OBJECT *obj, const char *key, const char *string)
 {
-    json_object_append(
-        obj, key, json_value_from_string(json_string_new(string)));
+    JSON_ObjectAppend(obj, key, JSON_ValueFromString(JSON_StringNew(string)));
 }
 
-void json_object_append_array(
-    struct json_object_s *obj, const char *key, struct json_array_s *arr)
+void JSON_ObjectAppendArray(JSON_OBJECT *obj, const char *key, JSON_ARRAY *arr)
 {
-    json_object_append(obj, key, json_value_from_array(arr));
+    JSON_ObjectAppend(obj, key, JSON_ValueFromArray(arr));
 }
 
-void json_object_append_object(
-    struct json_object_s *obj, const char *key, struct json_object_s *obj2)
+void JSON_ObjectAppendObject(
+    JSON_OBJECT *obj, const char *key, JSON_OBJECT *obj2)
 {
-    json_object_append(obj, key, json_value_from_object(obj2));
+    JSON_ObjectAppend(obj, key, JSON_ValueFromObject(obj2));
 }
 
-void json_object_evict_key(struct json_object_s *obj, const char *key)
+void JSON_ObjectEvictKey(JSON_OBJECT *obj, const char *key)
 {
     if (!obj) {
         return;
     }
-    struct json_object_element_s *elem = obj->start;
-    struct json_object_element_s *prev = json_null;
+    JSON_OBJECT_ELEMENT *elem = obj->start;
+    JSON_OBJECT_ELEMENT *prev = NULL;
     while (elem) {
         if (!strcmp(elem->name->string, key)) {
             if (!prev) {
@@ -376,7 +361,7 @@ void json_object_evict_key(struct json_object_s *obj, const char *key)
             } else {
                 prev->next = elem->next;
             }
-            json_object_element_free(elem);
+            JSON_ObjectElementFree(elem);
             return;
         }
         prev = elem;
@@ -384,154 +369,149 @@ void json_object_evict_key(struct json_object_s *obj, const char *key)
     }
 }
 
-struct json_value_s *json_object_get_value(
-    struct json_object_s *obj, const char *key)
+JSON_VALUE *JSON_ObjectGetValue(JSON_OBJECT *obj, const char *key)
 {
     if (!obj) {
-        return json_null;
+        return NULL;
     }
-    struct json_object_element_s *elem = obj->start;
+    JSON_OBJECT_ELEMENT *elem = obj->start;
     while (elem) {
         if (!strcmp(elem->name->string, key)) {
             return elem->value;
         }
         elem = elem->next;
     }
-    return json_null;
+    return NULL;
 }
 
-int json_object_get_bool(struct json_object_s *obj, const char *key, int d)
+int JSON_ObjectGetBool(JSON_OBJECT *obj, const char *key, int d)
 {
-    struct json_value_s *value = json_object_get_value(obj, key);
-    if (json_value_is_true(value)) {
+    JSON_VALUE *value = JSON_ObjectGetValue(obj, key);
+    if (JSON_ValueIsTrue(value)) {
         return 1;
-    } else if (json_value_is_false(value)) {
+    } else if (JSON_ValueIsFalse(value)) {
         return 0;
     }
     return d;
 }
 
-int json_object_get_int(struct json_object_s *obj, const char *key, int d)
+int JSON_ObjectGetInt(JSON_OBJECT *obj, const char *key, int d)
 {
-    struct json_value_s *value = json_object_get_value(obj, key);
-    struct json_number_s *num = json_value_as_number(value);
+    JSON_VALUE *value = JSON_ObjectGetValue(obj, key);
+    JSON_NUMBER *num = JSON_ValueAsNumber(value);
     if (num) {
         return atoi(num->number);
     }
     return d;
 }
 
-int64_t json_object_get_int64(
-    struct json_object_s *obj, const char *key, int64_t d)
+int64_t JSON_ObjectGetInt64(JSON_OBJECT *obj, const char *key, int64_t d)
 {
-    struct json_value_s *value = json_object_get_value(obj, key);
-    struct json_number_s *num = json_value_as_number(value);
+    JSON_VALUE *value = JSON_ObjectGetValue(obj, key);
+    JSON_NUMBER *num = JSON_ValueAsNumber(value);
     if (num) {
         return strtoll(num->number, NULL, 10);
     }
     return d;
 }
 
-double json_object_get_double(
-    struct json_object_s *obj, const char *key, double d)
+double JSON_ObjectGetDouble(JSON_OBJECT *obj, const char *key, double d)
 {
-    struct json_value_s *value = json_object_get_value(obj, key);
-    struct json_number_s *num = json_value_as_number(value);
+    JSON_VALUE *value = JSON_ObjectGetValue(obj, key);
+    JSON_NUMBER *num = JSON_ValueAsNumber(value);
     if (num) {
         return atof(num->number);
     }
     return d;
 }
 
-const char *json_object_get_string(
-    struct json_object_s *obj, const char *key, const char *d)
+const char *JSON_ObjectGetString(
+    JSON_OBJECT *obj, const char *key, const char *d)
 {
-    struct json_value_s *value = json_object_get_value(obj, key);
-    struct json_string_s *str = json_value_as_string(value);
+    JSON_VALUE *value = JSON_ObjectGetValue(obj, key);
+    JSON_STRING *str = JSON_ValueAsString(value);
     if (str) {
         return str->string;
     }
     return d;
 }
 
-struct json_array_s *json_object_get_array(
-    struct json_object_s *obj, const char *key)
+JSON_ARRAY *JSON_ObjectGetArray(JSON_OBJECT *obj, const char *key)
 {
-    struct json_value_s *value = json_object_get_value(obj, key);
-    struct json_array_s *arr = json_value_as_array(value);
+    JSON_VALUE *value = JSON_ObjectGetValue(obj, key);
+    JSON_ARRAY *arr = JSON_ValueAsArray(value);
     return arr;
 }
 
-struct json_object_s *json_object_get_object(
-    struct json_object_s *obj, const char *key)
+JSON_OBJECT *JSON_ObjectGetObject(JSON_OBJECT *obj, const char *key)
 {
-    struct json_value_s *value = json_object_get_value(obj, key);
-    struct json_object_s *obj2 = json_value_as_object(value);
+    JSON_VALUE *value = JSON_ObjectGetValue(obj, key);
+    JSON_OBJECT *obj2 = JSON_ValueAsObject(value);
     return obj2;
 }
 
-struct json_value_s *json_value_from_bool(int b)
+JSON_VALUE *JSON_ValueFromBool(int b)
 {
-    struct json_value_s *value = Memory_Alloc(sizeof(struct json_value_s));
-    value->type = b ? json_type_true : json_type_false;
+    JSON_VALUE *value = Memory_Alloc(sizeof(JSON_VALUE));
+    value->type = b ? JSON_TYPE_TRUE : JSON_TYPE_FALSE;
     value->payload = NULL;
     return value;
 }
 
-struct json_value_s *json_value_from_number(struct json_number_s *num)
+JSON_VALUE *JSON_ValueFromNumber(JSON_NUMBER *num)
 {
-    struct json_value_s *value = Memory_Alloc(sizeof(struct json_value_s));
-    value->type = json_type_number;
+    JSON_VALUE *value = Memory_Alloc(sizeof(JSON_VALUE));
+    value->type = JSON_TYPE_NUMBER;
     value->payload = num;
     return value;
 }
 
-struct json_value_s *json_value_from_string(struct json_string_s *str)
+JSON_VALUE *JSON_ValueFromString(JSON_STRING *str)
 {
-    struct json_value_s *value = Memory_Alloc(sizeof(struct json_value_s));
-    value->type = json_type_string;
+    JSON_VALUE *value = Memory_Alloc(sizeof(JSON_VALUE));
+    value->type = JSON_TYPE_STRING;
     value->payload = str;
     return value;
 }
 
-struct json_value_s *json_value_from_array(struct json_array_s *arr)
+JSON_VALUE *JSON_ValueFromArray(JSON_ARRAY *arr)
 {
-    struct json_value_s *value = Memory_Alloc(sizeof(struct json_value_s));
-    value->type = json_type_array;
+    JSON_VALUE *value = Memory_Alloc(sizeof(JSON_VALUE));
+    value->type = JSON_TYPE_ARRAY;
     value->payload = arr;
     return value;
 }
 
-struct json_value_s *json_value_from_object(struct json_object_s *obj)
+JSON_VALUE *JSON_ValueFromObject(JSON_OBJECT *obj)
 {
-    struct json_value_s *value = Memory_Alloc(sizeof(struct json_value_s));
-    value->type = json_type_object;
+    JSON_VALUE *value = Memory_Alloc(sizeof(JSON_VALUE));
+    value->type = JSON_TYPE_OBJECT;
     value->payload = obj;
     return value;
 }
 
-void json_value_free(struct json_value_s *value)
+void JSON_ValueFree(JSON_VALUE *value)
 {
     if (!value) {
         return;
     }
     if (!value->ref_count) {
         switch (value->type) {
-        case json_type_number:
-            json_number_free((struct json_number_s *)value->payload);
+        case JSON_TYPE_NUMBER:
+            JSON_NumberFree((JSON_NUMBER *)value->payload);
             break;
-        case json_type_string:
-            json_string_free((struct json_string_s *)value->payload);
+        case JSON_TYPE_STRING:
+            JSON_StringFree((JSON_STRING *)value->payload);
             break;
-        case json_type_array:
-            json_array_free((struct json_array_s *)value->payload);
+        case JSON_TYPE_ARRAY:
+            JSON_ArrayFree((JSON_ARRAY *)value->payload);
             break;
-        case json_type_object:
-            json_object_free((struct json_object_s *)value->payload);
+        case JSON_TYPE_OBJECT:
+            JSON_ObjectFree((JSON_OBJECT *)value->payload);
             break;
-        case json_type_true:
-        case json_type_null:
-        case json_type_false:
+        case JSON_TYPE_TRUE:
+        case JSON_TYPE_NULL:
+        case JSON_TYPE_FALSE:
             break;
         }
 

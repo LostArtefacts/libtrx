@@ -2,7 +2,7 @@
 
 #include "memory.h"
 
-struct json_parse_state_s {
+typedef struct {
     const char *src;
     size_t size;
     size_t offset;
@@ -14,40 +14,32 @@ struct json_parse_state_s {
     size_t line_no;
     size_t line_offset;
     size_t error;
-};
+} M_STATE;
 
 static int M_HexDigit(const char c);
 static int M_HexValue(
     const char *c, const unsigned long size, unsigned long *result);
 
-static int M_SkipWhitespace(struct json_parse_state_s *state);
-static int M_SkipCStyleComments(struct json_parse_state_s *state);
-static int M_SkipAllSkippables(struct json_parse_state_s *state);
+static int M_SkipWhitespace(M_STATE *state);
+static int M_SkipCStyleComments(M_STATE *state);
+static int M_SkipAllSkippables(M_STATE *state);
 
-static int M_GetValueSize(
-    struct json_parse_state_s *state, int is_global_object);
-static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key);
+static int M_GetValueSize(M_STATE *state, int is_global_object);
+static int M_GetStringSize(M_STATE *state, size_t is_key);
 static int M_IsValidUnquotedKeyChar(const char c);
-static int M_GetKeySize(struct json_parse_state_s *state);
-static int M_GetObjectSize(
-    struct json_parse_state_s *state, int is_global_object);
-static int M_GetArraySize(struct json_parse_state_s *state);
-static int M_GetNumberSize(struct json_parse_state_s *state);
+static int M_GetKeySize(M_STATE *state);
+static int M_GetObjectSize(M_STATE *state, int is_global_object);
+static int M_GetArraySize(M_STATE *state);
+static int M_GetNumberSize(M_STATE *state);
 
 static void M_HandleValue(
-    struct json_parse_state_s *state, int is_global_object,
-    struct json_value_s *value);
-static void M_HandleString(
-    struct json_parse_state_s *state, struct json_string_s *string);
-static void M_HandleKey(
-    struct json_parse_state_s *state, struct json_string_s *string);
+    M_STATE *state, int is_global_object, JSON_VALUE *value);
+static void M_HandleString(M_STATE *state, JSON_STRING *string);
+static void M_HandleKey(M_STATE *state, JSON_STRING *string);
 static void M_HandleObject(
-    struct json_parse_state_s *state, int is_global_object,
-    struct json_object_s *object);
-static void M_HandleArray(
-    struct json_parse_state_s *state, struct json_array_s *array);
-static void M_HandleNumber(
-    struct json_parse_state_s *state, struct json_number_s *number);
+    M_STATE *state, int is_global_object, JSON_OBJECT *object);
+static void M_HandleArray(M_STATE *state, JSON_ARRAY *array);
+static void M_HandleNumber(M_STATE *state, JSON_NUMBER *number);
 
 static int M_HexDigit(const char c)
 {
@@ -85,7 +77,7 @@ static int M_HexValue(
     return 1;
 }
 
-static int M_SkipWhitespace(struct json_parse_state_s *state)
+static int M_SkipWhitespace(M_STATE *state)
 {
     size_t offset = state->offset;
     const size_t size = state->size;
@@ -127,7 +119,7 @@ static int M_SkipWhitespace(struct json_parse_state_s *state)
     return 1;
 }
 
-static int M_SkipCStyleComments(struct json_parse_state_s *state)
+static int M_SkipCStyleComments(M_STATE *state)
 {
     /* do we have a comment?. */
     if ('/' == state->src[state->offset]) {
@@ -191,7 +183,7 @@ static int M_SkipCStyleComments(struct json_parse_state_s *state)
     return 0;
 }
 
-static int M_SkipAllSkippables(struct json_parse_state_s *state)
+static int M_SkipAllSkippables(M_STATE *state)
 {
     /* skip all whitespace and other skippables until there are none left. note
      * that the previous version suffered from read past errors should. the
@@ -201,10 +193,10 @@ static int M_SkipAllSkippables(struct json_parse_state_s *state)
     int did_consume = 0;
     const size_t size = state->size;
 
-    if (json_parse_flags_allow_c_style_comments & state->flags_bitset) {
+    if (JSON_PARSE_FLAGS_ALLOW_C_STYLE_COMMENTS & state->flags_bitset) {
         do {
             if (state->offset == size) {
-                state->error = json_parse_error_premature_end_of_buffer;
+                state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
                 return 1;
             }
 
@@ -214,7 +206,7 @@ static int M_SkipAllSkippables(struct json_parse_state_s *state)
              * call.
              */
             if (state->offset == size) {
-                state->error = json_parse_error_premature_end_of_buffer;
+                state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
                 return 1;
             }
 
@@ -223,7 +215,7 @@ static int M_SkipAllSkippables(struct json_parse_state_s *state)
     } else {
         do {
             if (state->offset == size) {
-                state->error = json_parse_error_premature_end_of_buffer;
+                state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
                 return 1;
             }
 
@@ -232,14 +224,14 @@ static int M_SkipAllSkippables(struct json_parse_state_s *state)
     }
 
     if (state->offset == size) {
-        state->error = json_parse_error_premature_end_of_buffer;
+        state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
         return 1;
     }
 
     return 0;
 }
 
-static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
+static int M_GetStringSize(M_STATE *state, size_t is_key)
 {
     size_t offset = state->offset;
     const size_t size = state->size;
@@ -251,18 +243,18 @@ static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
     unsigned long codepoint;
     unsigned long high_surrogate = 0;
 
-    if ((json_parse_flags_allow_location_information & flags_bitset) != 0
+    if ((JSON_PARSE_FLAGS_ALLOW_LOCATION_INFORMATION & flags_bitset) != 0
         && is_key != 0) {
-        state->dom_size += sizeof(struct json_string_ex_s);
+        state->dom_size += sizeof(JSON_STRING_EX);
     } else {
-        state->dom_size += sizeof(struct json_string_s);
+        state->dom_size += sizeof(JSON_STRING);
     }
 
     if ('"' != src[offset]) {
         /* if we are allowed single quoted strings check for that too. */
-        if (!((json_parse_flags_allow_single_quoted_strings & flags_bitset)
+        if (!((JSON_PARSE_FLAGS_ALLOW_SINGLE_QUOTED_STRINGS & flags_bitset)
               && is_single_quote)) {
-            state->error = json_parse_error_expected_opening_quote;
+            state->error = JSON_PARSE_ERROR_EXPECTED_OPENING_QUOTE;
             state->offset = offset;
             return 1;
         }
@@ -278,7 +270,7 @@ static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
         switch (src[offset]) {
         case '\0':
         case '\t':
-            state->error = json_parse_error_invalid_string;
+            state->error = JSON_PARSE_ERROR_INVALID_STRING;
             state->offset = offset;
             return 1;
         }
@@ -288,14 +280,14 @@ static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
             offset++;
 
             if (offset == size) {
-                state->error = json_parse_error_premature_end_of_buffer;
+                state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
                 state->offset = offset;
                 return 1;
             }
 
             switch (src[offset]) {
             default:
-                state->error = json_parse_error_invalid_string_escape_sequence;
+                state->error = JSON_PARSE_ERROR_INVALID_STRING_ESCAPE_SEQUENCE;
                 state->offset = offset;
                 return 1;
             case '"':
@@ -313,7 +305,7 @@ static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
                 if (!(offset + 5 < size)) {
                     /* invalid escaped unicode sequence! */
                     state->error =
-                        json_parse_error_invalid_string_escape_sequence;
+                        JSON_PARSE_ERROR_INVALID_STRING_ESCAPE_SEQUENCE;
                     state->offset = offset;
                     return 1;
                 }
@@ -323,7 +315,7 @@ static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
                     /* escaped unicode sequences must contain 4 hexadecimal
                      * digits! */
                     state->error =
-                        json_parse_error_invalid_string_escape_sequence;
+                        JSON_PARSE_ERROR_INVALID_STRING_ESCAPE_SEQUENCE;
                     state->offset = offset;
                     return 1;
                 }
@@ -350,7 +342,7 @@ static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
                         high_surrogate = 0;
                     } else {
                         state->error =
-                            json_parse_error_invalid_string_escape_sequence;
+                            JSON_PARSE_ERROR_INVALID_STRING_ESCAPE_SEQUENCE;
                         state->offset = offset;
                         return 1;
                     }
@@ -369,7 +361,7 @@ static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
                     if (offset + 11 > size || '\\' != src[offset + 5]
                         || 'u' != src[offset + 6]) {
                         state->error =
-                            json_parse_error_invalid_string_escape_sequence;
+                            JSON_PARSE_ERROR_INVALID_STRING_ESCAPE_SEQUENCE;
                         state->offset = offset;
                         return 1;
                     }
@@ -381,7 +373,7 @@ static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
                                                                    */
                     /* we did not read the other half before. */
                     state->error =
-                        json_parse_error_invalid_string_escape_sequence;
+                        JSON_PARSE_ERROR_INVALID_STRING_ESCAPE_SEQUENCE;
                     state->offset = offset;
                     return 1;
                 } else {
@@ -394,9 +386,9 @@ static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
                 break;
             }
         } else if (('\r' == src[offset]) || ('\n' == src[offset])) {
-            if (!(json_parse_flags_allow_multi_line_strings & flags_bitset)) {
+            if (!(JSON_PARSE_FLAGS_ALLOW_MULTI_LINE_STRINGS & flags_bitset)) {
                 /* invalid escaped unicode sequence! */
-                state->error = json_parse_error_invalid_string_escape_sequence;
+                state->error = JSON_PARSE_ERROR_INVALID_STRING_ESCAPE_SEQUENCE;
                 state->offset = offset;
                 return 1;
             }
@@ -410,7 +402,7 @@ static int M_GetStringSize(struct json_parse_state_s *state, size_t is_key)
 
     /* If the offset is equal to the size, we had a non-terminated string! */
     if (offset == size) {
-        state->error = json_parse_error_premature_end_of_buffer;
+        state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
         state->offset = offset - 1;
         return 1;
     }
@@ -437,11 +429,11 @@ static int M_IsValidUnquotedKeyChar(const char c)
         || ('A' <= c && c <= 'Z') || ('_' == c));
 }
 
-static int M_GetKeySize(struct json_parse_state_s *state)
+static int M_GetKeySize(M_STATE *state)
 {
     const size_t flags_bitset = state->flags_bitset;
 
-    if (json_parse_flags_allow_unquoted_keys & flags_bitset) {
+    if (JSON_PARSE_FLAGS_ALLOW_UNQUOTED_KEYS & flags_bitset) {
         size_t offset = state->offset;
         const size_t size = state->size;
         const char *const src = state->src;
@@ -453,7 +445,7 @@ static int M_GetKeySize(struct json_parse_state_s *state)
              */
             return M_GetStringSize(state, 1);
         } else if (
-            (json_parse_flags_allow_single_quoted_strings & flags_bitset)
+            (JSON_PARSE_FLAGS_ALLOW_SINGLE_QUOTED_STRINGS & flags_bitset)
             && ('\'' == src[offset])) {
             /* ... if we got a comma, just parse the key as a string as normal.
              */
@@ -467,10 +459,10 @@ static int M_GetKeySize(struct json_parse_state_s *state)
             /* one more byte for null terminator ending the string! */
             data_size++;
 
-            if (json_parse_flags_allow_location_information & flags_bitset) {
-                state->dom_size += sizeof(struct json_string_ex_s);
+            if (JSON_PARSE_FLAGS_ALLOW_LOCATION_INFORMATION & flags_bitset) {
+                state->dom_size += sizeof(JSON_STRING_EX);
             } else {
-                state->dom_size += sizeof(struct json_string_s);
+                state->dom_size += sizeof(JSON_STRING);
             }
 
             /* update offset. */
@@ -487,8 +479,7 @@ static int M_GetKeySize(struct json_parse_state_s *state)
     }
 }
 
-static int M_GetObjectSize(
-    struct json_parse_state_s *state, int is_global_object)
+static int M_GetObjectSize(M_STATE *state, int is_global_object)
 {
     const size_t flags_bitset = state->flags_bitset;
     const char *const src = state->src;
@@ -508,7 +499,7 @@ static int M_GetObjectSize(
 
     if (!is_global_object) {
         if ('{' != src[state->offset]) {
-            state->error = json_parse_error_unknown;
+            state->error = JSON_PARSE_ERROR_UNKNOWN;
             return 1;
         }
 
@@ -516,17 +507,17 @@ static int M_GetObjectSize(
         state->offset++;
     }
 
-    state->dom_size += sizeof(struct json_object_s);
+    state->dom_size += sizeof(JSON_OBJECT);
 
     if ((state->offset == size) && !is_global_object) {
-        state->error = json_parse_error_premature_end_of_buffer;
+        state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
         return 1;
     }
 
     do {
         if (!is_global_object) {
             if (M_SkipAllSkippables(state)) {
-                state->error = json_parse_error_premature_end_of_buffer;
+                state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
                 return 1;
             }
 
@@ -553,7 +544,7 @@ static int M_GetObjectSize(
                 /* skip comma. */
                 state->offset++;
                 allow_comma = 0;
-            } else if (json_parse_flags_allow_no_commas & flags_bitset) {
+            } else if (JSON_PARSE_FLAGS_ALLOW_NO_COMMAS & flags_bitset) {
                 /* we don't require a comma, and we didn't find one, which is
                  * ok! */
                 allow_comma = 0;
@@ -561,15 +552,15 @@ static int M_GetObjectSize(
                 /* otherwise we are required to have a comma, and we found none.
                  */
                 state->error =
-                    json_parse_error_expected_comma_or_closing_bracket;
+                    JSON_PARSE_ERROR_EXPECTED_COMMA_OR_CLOSING_BRACKET;
                 return 1;
             }
 
-            if (json_parse_flags_allow_trailing_comma & flags_bitset) {
+            if (JSON_PARSE_FLAGS_ALLOW_TRAILING_COMMA & flags_bitset) {
                 continue;
             } else {
                 if (M_SkipAllSkippables(state)) {
-                    state->error = json_parse_error_premature_end_of_buffer;
+                    state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
                     return 1;
                 }
             }
@@ -577,24 +568,24 @@ static int M_GetObjectSize(
 
         if (M_GetKeySize(state)) {
             /* key parsing failed! */
-            state->error = json_parse_error_invalid_string;
+            state->error = JSON_PARSE_ERROR_INVALID_STRING;
             return 1;
         }
 
         if (M_SkipAllSkippables(state)) {
-            state->error = json_parse_error_premature_end_of_buffer;
+            state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
             return 1;
         }
 
-        if (json_parse_flags_allow_equals_in_object & flags_bitset) {
+        if (JSON_PARSE_FLAGS_ALLOW_EQUALS_IN_OBJECT & flags_bitset) {
             const char current = src[state->offset];
             if ((':' != current) && ('=' != current)) {
-                state->error = json_parse_error_expected_colon;
+                state->error = JSON_PARSE_ERROR_EXPECTED_COLON;
                 return 1;
             }
         } else {
             if (':' != src[state->offset]) {
-                state->error = json_parse_error_expected_colon;
+                state->error = JSON_PARSE_ERROR_EXPECTED_COLON;
                 return 1;
             }
         }
@@ -603,7 +594,7 @@ static int M_GetObjectSize(
         state->offset++;
 
         if (M_SkipAllSkippables(state)) {
-            state->error = json_parse_error_premature_end_of_buffer;
+            state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
             return 1;
         }
 
@@ -618,16 +609,16 @@ static int M_GetObjectSize(
     } while (state->offset < size);
 
     if ((state->offset == size) && !is_global_object && !found_closing_brace) {
-        state->error = json_parse_error_premature_end_of_buffer;
+        state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
         return 1;
     }
 
-    state->dom_size += sizeof(struct json_object_element_s) * elements;
+    state->dom_size += sizeof(JSON_OBJECT_ELEMENT) * elements;
 
     return 0;
 }
 
-static int M_GetArraySize(struct json_parse_state_s *state)
+static int M_GetArraySize(M_STATE *state)
 {
     const size_t flags_bitset = state->flags_bitset;
     size_t elements = 0;
@@ -637,18 +628,18 @@ static int M_GetArraySize(struct json_parse_state_s *state)
 
     if ('[' != src[state->offset]) {
         /* expected array to begin with leading '['. */
-        state->error = json_parse_error_unknown;
+        state->error = JSON_PARSE_ERROR_UNKNOWN;
         return 1;
     }
 
     /* skip leading '['. */
     state->offset++;
 
-    state->dom_size += sizeof(struct json_array_s);
+    state->dom_size += sizeof(JSON_ARRAY);
 
     while (state->offset < size) {
         if (M_SkipAllSkippables(state)) {
-            state->error = json_parse_error_premature_end_of_buffer;
+            state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
             return 1;
         }
 
@@ -656,7 +647,7 @@ static int M_GetArraySize(struct json_parse_state_s *state)
             /* skip trailing ']'. */
             state->offset++;
 
-            state->dom_size += sizeof(struct json_array_element_s) * elements;
+            state->dom_size += sizeof(JSON_ARRAY_ELEMENT) * elements;
 
             /* finished the object! */
             return 0;
@@ -668,18 +659,18 @@ static int M_GetArraySize(struct json_parse_state_s *state)
                 /* skip comma. */
                 state->offset++;
                 allow_comma = 0;
-            } else if (!(json_parse_flags_allow_no_commas & flags_bitset)) {
+            } else if (!(JSON_PARSE_FLAGS_ALLOW_NO_COMMAS & flags_bitset)) {
                 state->error =
-                    json_parse_error_expected_comma_or_closing_bracket;
+                    JSON_PARSE_ERROR_EXPECTED_COMMA_OR_CLOSING_BRACKET;
                 return 1;
             }
 
-            if (json_parse_flags_allow_trailing_comma & flags_bitset) {
+            if (JSON_PARSE_FLAGS_ALLOW_TRAILING_COMMA & flags_bitset) {
                 allow_comma = 0;
                 continue;
             } else {
                 if (M_SkipAllSkippables(state)) {
-                    state->error = json_parse_error_premature_end_of_buffer;
+                    state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
                     return 1;
                 }
             }
@@ -697,11 +688,11 @@ static int M_GetArraySize(struct json_parse_state_s *state)
 
     /* we consumed the entire input before finding the closing ']' of the array!
      */
-    state->error = json_parse_error_premature_end_of_buffer;
+    state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
     return 1;
 }
 
-static int M_GetNumberSize(struct json_parse_state_s *state)
+static int M_GetNumberSize(M_STATE *state)
 {
     const size_t flags_bitset = state->flags_bitset;
     size_t offset = state->offset;
@@ -709,9 +700,9 @@ static int M_GetNumberSize(struct json_parse_state_s *state)
     int had_leading_digits = 0;
     const char *const src = state->src;
 
-    state->dom_size += sizeof(struct json_number_s);
+    state->dom_size += sizeof(JSON_NUMBER);
 
-    if ((json_parse_flags_allow_hexadecimal_numbers & flags_bitset)
+    if ((JSON_PARSE_FLAGS_ALLOW_HEXADECIMAL_NUMBERS & flags_bitset)
         && (offset + 1 < size) && ('0' == src[offset])
         && (('x' == src[offset + 1]) || ('X' == src[offset + 1]))) {
         /* skip the leading 0x that identifies a hexadecimal number. */
@@ -730,7 +721,7 @@ static int M_GetNumberSize(struct json_parse_state_s *state)
 
         if ((offset < size)
             && (('-' == src[offset])
-                || ((json_parse_flags_allow_leading_plus_sign & flags_bitset)
+                || ((JSON_PARSE_FLAGS_ALLOW_LEADING_PLUS_SIGN & flags_bitset)
                     && ('+' == src[offset])))) {
             /* skip valid leading '-' or '+'. */
             offset++;
@@ -738,7 +729,7 @@ static int M_GetNumberSize(struct json_parse_state_s *state)
             found_sign = 1;
         }
 
-        if (json_parse_flags_allow_inf_and_nan & flags_bitset) {
+        if (JSON_PARSE_FLAGS_ALLOW_INF_AND_NAN & flags_bitset) {
             const char inf[9] = "Infinity";
             const size_t inf_strlen = sizeof(inf) - 1;
             const char nan[4] = "NaN";
@@ -784,11 +775,11 @@ static int M_GetNumberSize(struct json_parse_state_s *state)
         if (found_sign && !inf_or_nan && (offset < size)
             && !('0' <= src[offset] && src[offset] <= '9')) {
             /* check if we are allowing leading '.'. */
-            if (!(json_parse_flags_allow_leading_or_trailing_decimal_point
+            if (!(JSON_PARSE_FLAGS_ALLOW_LEADING_OR_TRAILING_DECIMAL_POINT
                   & flags_bitset)
                 || ('.' != src[offset])) {
                 /* a leading '-' must be immediately followed by any digit! */
-                state->error = json_parse_error_invalid_number_format;
+                state->error = JSON_PARSE_ERROR_INVALID_NUMBER_FORMAT;
                 state->offset = offset;
                 return 1;
             }
@@ -806,7 +797,7 @@ static int M_GetNumberSize(struct json_parse_state_s *state)
             if ((offset < size) && ('0' <= src[offset] && src[offset] <= '9')) {
                 /* a leading '0' must not be immediately followed by any digit!
                  */
-                state->error = json_parse_error_invalid_number_format;
+                state->error = JSON_PARSE_ERROR_INVALID_NUMBER_FORMAT;
                 state->offset = offset;
                 return 1;
             }
@@ -826,12 +817,12 @@ static int M_GetNumberSize(struct json_parse_state_s *state)
             offset++;
 
             if (!('0' <= src[offset] && src[offset] <= '9')) {
-                if (!(json_parse_flags_allow_leading_or_trailing_decimal_point
+                if (!(JSON_PARSE_FLAGS_ALLOW_LEADING_OR_TRAILING_DECIMAL_POINT
                       & flags_bitset)
                     || !had_leading_digits) {
                     /* a decimal point must be followed by at least one digit.
                      */
-                    state->error = json_parse_error_invalid_number_format;
+                    state->error = JSON_PARSE_ERROR_INVALID_NUMBER_FORMAT;
                     state->offset = offset;
                     return 1;
                 }
@@ -856,7 +847,7 @@ static int M_GetNumberSize(struct json_parse_state_s *state)
             if ((offset < size)
                 && !('0' <= src[offset] && src[offset] <= '9')) {
                 /* an exponent must have at least one digit! */
-                state->error = json_parse_error_invalid_number_format;
+                state->error = JSON_PARSE_ERROR_INVALID_NUMBER_FORMAT;
                 state->offset = offset;
                 return 1;
             }
@@ -881,15 +872,15 @@ static int M_GetNumberSize(struct json_parse_state_s *state)
             /* all of the above are ok. */
             break;
         case '=':
-            if (json_parse_flags_allow_equals_in_object & flags_bitset) {
+            if (JSON_PARSE_FLAGS_ALLOW_EQUALS_IN_OBJECT & flags_bitset) {
                 break;
             }
 
-            state->error = json_parse_error_invalid_number_format;
+            state->error = JSON_PARSE_ERROR_INVALID_NUMBER_FORMAT;
             state->offset = offset;
             return 1;
         default:
-            state->error = json_parse_error_invalid_number_format;
+            state->error = JSON_PARSE_ERROR_INVALID_NUMBER_FORMAT;
             state->offset = offset;
             return 1;
         }
@@ -906,25 +897,24 @@ static int M_GetNumberSize(struct json_parse_state_s *state)
     return 0;
 }
 
-static int M_GetValueSize(
-    struct json_parse_state_s *state, int is_global_object)
+static int M_GetValueSize(M_STATE *state, int is_global_object)
 {
     const size_t flags_bitset = state->flags_bitset;
     const char *const src = state->src;
     size_t offset;
     const size_t size = state->size;
 
-    if (json_parse_flags_allow_location_information & flags_bitset) {
-        state->dom_size += sizeof(struct json_value_ex_s);
+    if (JSON_PARSE_FLAGS_ALLOW_LOCATION_INFORMATION & flags_bitset) {
+        state->dom_size += sizeof(JSON_VALUE_EX);
     } else {
-        state->dom_size += sizeof(struct json_value_s);
+        state->dom_size += sizeof(JSON_VALUE);
     }
 
     if (is_global_object) {
         return M_GetObjectSize(state, /* is_global_object = */ 1);
     } else {
         if (M_SkipAllSkippables(state)) {
-            state->error = json_parse_error_premature_end_of_buffer;
+            state->error = JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER;
             return 1;
         }
 
@@ -935,11 +925,11 @@ static int M_GetValueSize(
         case '"':
             return M_GetStringSize(state, 0);
         case '\'':
-            if (json_parse_flags_allow_single_quoted_strings & flags_bitset) {
+            if (JSON_PARSE_FLAGS_ALLOW_SINGLE_QUOTED_STRINGS & flags_bitset) {
                 return M_GetStringSize(state, 0);
             } else {
                 /* invalid value! */
-                state->error = json_parse_error_invalid_value;
+                state->error = JSON_PARSE_ERROR_INVALID_VALUE;
                 return 1;
             }
         case '{':
@@ -959,20 +949,20 @@ static int M_GetValueSize(
         case '9':
             return M_GetNumberSize(state);
         case '+':
-            if (json_parse_flags_allow_leading_plus_sign & flags_bitset) {
+            if (JSON_PARSE_FLAGS_ALLOW_LEADING_PLUS_SIGN & flags_bitset) {
                 return M_GetNumberSize(state);
             } else {
                 /* invalid value! */
-                state->error = json_parse_error_invalid_number_format;
+                state->error = JSON_PARSE_ERROR_INVALID_NUMBER_FORMAT;
                 return 1;
             }
         case '.':
-            if (json_parse_flags_allow_leading_or_trailing_decimal_point
+            if (JSON_PARSE_FLAGS_ALLOW_LEADING_OR_TRAILING_DECIMAL_POINT
                 & flags_bitset) {
                 return M_GetNumberSize(state);
             } else {
                 /* invalid value! */
-                state->error = json_parse_error_invalid_number_format;
+                state->error = JSON_PARSE_ERROR_INVALID_NUMBER_FORMAT;
                 return 1;
             }
         default:
@@ -995,12 +985,12 @@ static int M_GetValueSize(
                 state->offset += 4;
                 return 0;
             } else if (
-                (json_parse_flags_allow_inf_and_nan & flags_bitset)
+                (JSON_PARSE_FLAGS_ALLOW_INF_AND_NAN & flags_bitset)
                 && (offset + 3) <= size && 'N' == src[offset + 0]
                 && 'a' == src[offset + 1] && 'N' == src[offset + 2]) {
                 return M_GetNumberSize(state);
             } else if (
-                (json_parse_flags_allow_inf_and_nan & flags_bitset)
+                (JSON_PARSE_FLAGS_ALLOW_INF_AND_NAN & flags_bitset)
                 && (offset + 8) <= size && 'I' == src[offset + 0]
                 && 'n' == src[offset + 1] && 'f' == src[offset + 2]
                 && 'i' == src[offset + 3] && 'n' == src[offset + 4]
@@ -1010,14 +1000,13 @@ static int M_GetValueSize(
             }
 
             /* invalid value! */
-            state->error = json_parse_error_invalid_value;
+            state->error = JSON_PARSE_ERROR_INVALID_VALUE;
             return 1;
         }
     }
 }
 
-static void M_HandleString(
-    struct json_parse_state_s *state, struct json_string_s *string)
+static void M_HandleString(M_STATE *state, JSON_STRING *string)
 {
     size_t offset = state->offset;
     size_t bytes_written = 0;
@@ -1159,10 +1148,9 @@ static void M_HandleString(
     state->offset = offset;
 }
 
-static void M_HandleKey(
-    struct json_parse_state_s *state, struct json_string_s *string)
+static void M_HandleKey(M_STATE *state, JSON_STRING *string)
 {
-    if (json_parse_flags_allow_unquoted_keys & state->flags_bitset) {
+    if (JSON_PARSE_FLAGS_ALLOW_UNQUOTED_KEYS & state->flags_bitset) {
         const char *const src = state->src;
         char *const data = state->data;
         size_t offset = state->offset;
@@ -1201,15 +1189,14 @@ static void M_HandleKey(
 }
 
 static void M_HandleObject(
-    struct json_parse_state_s *state, int is_global_object,
-    struct json_object_s *object)
+    M_STATE *state, int is_global_object, JSON_OBJECT *object)
 {
     const size_t flags_bitset = state->flags_bitset;
     const size_t size = state->size;
     const char *const src = state->src;
     size_t elements = 0;
     int allow_comma = 0;
-    struct json_object_element_s *previous = json_null;
+    JSON_OBJECT_ELEMENT *previous = NULL;
 
     if (is_global_object) {
         /* if we skipped some whitespace, and then found an opening '{' of an.
@@ -1234,9 +1221,9 @@ static void M_HandleObject(
     elements = 0;
 
     while (state->offset < size) {
-        struct json_object_element_s *element = json_null;
-        struct json_string_s *string = json_null;
-        struct json_value_s *value = json_null;
+        JSON_OBJECT_ELEMENT *element = NULL;
+        JSON_STRING *string = NULL;
+        JSON_VALUE *value = NULL;
 
         if (!is_global_object) {
             M_SkipAllSkippables(state);
@@ -1265,12 +1252,12 @@ static void M_HandleObject(
             }
         }
 
-        element = (struct json_object_element_s *)state->dom;
+        element = (JSON_OBJECT_ELEMENT *)state->dom;
         element->ref_count = 1;
 
-        state->dom += sizeof(struct json_object_element_s);
+        state->dom += sizeof(JSON_OBJECT_ELEMENT);
 
-        if (json_null == previous) {
+        if (NULL == previous) {
             /* this is our first element, so record it in our object. */
             object->start = element;
         } else {
@@ -1279,10 +1266,9 @@ static void M_HandleObject(
 
         previous = element;
 
-        if (json_parse_flags_allow_location_information & flags_bitset) {
-            struct json_string_ex_s *string_ex =
-                (struct json_string_ex_s *)state->dom;
-            state->dom += sizeof(struct json_string_ex_s);
+        if (JSON_PARSE_FLAGS_ALLOW_LOCATION_INFORMATION & flags_bitset) {
+            JSON_STRING_EX *string_ex = (JSON_STRING_EX *)state->dom;
+            state->dom += sizeof(JSON_STRING_EX);
 
             string_ex->offset = state->offset;
             string_ex->line_no = state->line_no;
@@ -1290,8 +1276,8 @@ static void M_HandleObject(
 
             string = &(string_ex->string);
         } else {
-            string = (struct json_string_s *)state->dom;
-            state->dom += sizeof(struct json_string_s);
+            string = (JSON_STRING *)state->dom;
+            state->dom += sizeof(JSON_STRING);
         }
 
         element->name = string;
@@ -1305,10 +1291,9 @@ static void M_HandleObject(
 
         M_SkipAllSkippables(state);
 
-        if (json_parse_flags_allow_location_information & flags_bitset) {
-            struct json_value_ex_s *value_ex =
-                (struct json_value_ex_s *)state->dom;
-            state->dom += sizeof(struct json_value_ex_s);
+        if (JSON_PARSE_FLAGS_ALLOW_LOCATION_INFORMATION & flags_bitset) {
+            JSON_VALUE_EX *value_ex = (JSON_VALUE_EX *)state->dom;
+            state->dom += sizeof(JSON_VALUE_EX);
 
             value_ex->offset = state->offset;
             value_ex->line_no = state->line_no;
@@ -1316,8 +1301,8 @@ static void M_HandleObject(
 
             value = &(value_ex->value);
         } else {
-            value = (struct json_value_s *)state->dom;
-            state->dom += sizeof(struct json_value_s);
+            value = (JSON_VALUE *)state->dom;
+            state->dom += sizeof(JSON_VALUE);
         }
 
         element->value = value;
@@ -1331,25 +1316,24 @@ static void M_HandleObject(
 
     /* if we had at least one element, end the linked list. */
     if (previous) {
-        previous->next = json_null;
+        previous->next = NULL;
     }
 
     if (elements == 0) {
-        object->start = json_null;
+        object->start = NULL;
     }
 
     object->ref_count = 1;
     object->length = elements;
 }
 
-static void M_HandleArray(
-    struct json_parse_state_s *state, struct json_array_s *array)
+static void M_HandleArray(M_STATE *state, JSON_ARRAY *array)
 {
     const char *const src = state->src;
     const size_t size = state->size;
     size_t elements = 0;
     int allow_comma = 0;
-    struct json_array_element_s *previous = json_null;
+    JSON_ARRAY_ELEMENT *previous = NULL;
 
     /* skip leading '['. */
     state->offset++;
@@ -1360,8 +1344,8 @@ static void M_HandleArray(
     elements = 0;
 
     do {
-        struct json_array_element_s *element = json_null;
-        struct json_value_s *value = json_null;
+        JSON_ARRAY_ELEMENT *element = NULL;
+        JSON_VALUE *value = NULL;
 
         M_SkipAllSkippables(state);
 
@@ -1383,12 +1367,12 @@ static void M_HandleArray(
             }
         }
 
-        element = (struct json_array_element_s *)state->dom;
+        element = (JSON_ARRAY_ELEMENT *)state->dom;
         element->ref_count = 1;
 
-        state->dom += sizeof(struct json_array_element_s);
+        state->dom += sizeof(JSON_ARRAY_ELEMENT);
 
-        if (json_null == previous) {
+        if (NULL == previous) {
             /* this is our first element, so record it in our array. */
             array->start = element;
         } else {
@@ -1397,10 +1381,9 @@ static void M_HandleArray(
 
         previous = element;
 
-        if (json_parse_flags_allow_location_information & state->flags_bitset) {
-            struct json_value_ex_s *value_ex =
-                (struct json_value_ex_s *)state->dom;
-            state->dom += sizeof(struct json_value_ex_s);
+        if (JSON_PARSE_FLAGS_ALLOW_LOCATION_INFORMATION & state->flags_bitset) {
+            JSON_VALUE_EX *value_ex = (JSON_VALUE_EX *)state->dom;
+            state->dom += sizeof(JSON_VALUE_EX);
 
             value_ex->offset = state->offset;
             value_ex->line_no = state->line_no;
@@ -1408,8 +1391,8 @@ static void M_HandleArray(
 
             value = &(value_ex->value);
         } else {
-            value = (struct json_value_s *)state->dom;
-            state->dom += sizeof(struct json_value_s);
+            value = (JSON_VALUE *)state->dom;
+            state->dom += sizeof(JSON_VALUE);
         }
 
         element->value = value;
@@ -1423,19 +1406,18 @@ static void M_HandleArray(
 
     /* end the linked list. */
     if (previous) {
-        previous->next = json_null;
+        previous->next = NULL;
     }
 
     if (elements == 0) {
-        array->start = json_null;
+        array->start = NULL;
     }
 
     array->ref_count = 1;
     array->length = elements;
 }
 
-static void M_HandleNumber(
-    struct json_parse_state_s *state, struct json_number_s *number)
+static void M_HandleNumber(M_STATE *state, JSON_NUMBER *number)
 {
     const size_t flags_bitset = state->flags_bitset;
     size_t offset = state->offset;
@@ -1447,7 +1429,7 @@ static void M_HandleNumber(
     number->ref_count = 1;
     number->number = data;
 
-    if (json_parse_flags_allow_hexadecimal_numbers & flags_bitset) {
+    if (JSON_PARSE_FLAGS_ALLOW_HEXADECIMAL_NUMBERS & flags_bitset) {
         if (('0' == src[offset])
             && (('x' == src[offset + 1]) || ('X' == src[offset + 1]))) {
             /* consume hexadecimal digits. */
@@ -1492,7 +1474,7 @@ static void M_HandleNumber(
         }
     }
 
-    if (json_parse_flags_allow_inf_and_nan & flags_bitset) {
+    if (JSON_PARSE_FLAGS_ALLOW_INF_AND_NAN & flags_bitset) {
         const size_t inf_strlen = 8; /* = strlen("Infinity");. */
         const size_t nan_strlen = 3; /* = strlen("NaN");. */
 
@@ -1528,8 +1510,7 @@ static void M_HandleNumber(
 }
 
 static void M_HandleValue(
-    struct json_parse_state_s *state, int is_global_object,
-    struct json_value_s *value)
+    M_STATE *state, int is_global_object, JSON_VALUE *value)
 {
     const size_t flags_bitset = state->flags_bitset;
     const char *const src = state->src;
@@ -1542,35 +1523,34 @@ static void M_HandleValue(
     offset = state->offset;
 
     if (is_global_object) {
-        value->type = json_type_object;
+        value->type = JSON_TYPE_OBJECT;
         value->payload = state->dom;
-        state->dom += sizeof(struct json_object_s);
+        state->dom += sizeof(JSON_OBJECT);
         M_HandleObject(
-            state, /* is_global_object = */ 1,
-            (struct json_object_s *)value->payload);
+            state, /* is_global_object = */ 1, (JSON_OBJECT *)value->payload);
     } else {
         value->ref_count = 1;
         switch (src[offset]) {
         case '"':
         case '\'':
-            value->type = json_type_string;
+            value->type = JSON_TYPE_STRING;
             value->payload = state->dom;
-            state->dom += sizeof(struct json_string_s);
-            M_HandleString(state, (struct json_string_s *)value->payload);
+            state->dom += sizeof(JSON_STRING);
+            M_HandleString(state, (JSON_STRING *)value->payload);
             break;
         case '{':
-            value->type = json_type_object;
+            value->type = JSON_TYPE_OBJECT;
             value->payload = state->dom;
-            state->dom += sizeof(struct json_object_s);
+            state->dom += sizeof(JSON_OBJECT);
             M_HandleObject(
                 state, /* is_global_object = */ 0,
-                (struct json_object_s *)value->payload);
+                (JSON_OBJECT *)value->payload);
             break;
         case '[':
-            value->type = json_type_array;
+            value->type = JSON_TYPE_ARRAY;
             value->payload = state->dom;
-            state->dom += sizeof(struct json_array_s);
-            M_HandleArray(state, (struct json_array_s *)value->payload);
+            state->dom += sizeof(JSON_ARRAY);
+            M_HandleArray(state, (JSON_ARRAY *)value->payload);
             break;
         case '-':
         case '+':
@@ -1585,85 +1565,84 @@ static void M_HandleValue(
         case '8':
         case '9':
         case '.':
-            value->type = json_type_number;
+            value->type = JSON_TYPE_NUMBER;
             value->payload = state->dom;
-            state->dom += sizeof(struct json_number_s);
-            M_HandleNumber(state, (struct json_number_s *)value->payload);
+            state->dom += sizeof(JSON_NUMBER);
+            M_HandleNumber(state, (JSON_NUMBER *)value->payload);
             break;
         default:
             if ((offset + 4) <= size && 't' == src[offset + 0]
                 && 'r' == src[offset + 1] && 'u' == src[offset + 2]
                 && 'e' == src[offset + 3]) {
-                value->type = json_type_true;
-                value->payload = json_null;
+                value->type = JSON_TYPE_TRUE;
+                value->payload = NULL;
                 state->offset += 4;
             } else if (
                 (offset + 5) <= size && 'f' == src[offset + 0]
                 && 'a' == src[offset + 1] && 'l' == src[offset + 2]
                 && 's' == src[offset + 3] && 'e' == src[offset + 4]) {
-                value->type = json_type_false;
-                value->payload = json_null;
+                value->type = JSON_TYPE_FALSE;
+                value->payload = NULL;
                 state->offset += 5;
             } else if (
                 (offset + 4) <= size && 'n' == src[offset + 0]
                 && 'u' == src[offset + 1] && 'l' == src[offset + 2]
                 && 'l' == src[offset + 3]) {
-                value->type = json_type_null;
-                value->payload = json_null;
+                value->type = JSON_TYPE_NULL;
+                value->payload = NULL;
                 state->offset += 4;
             } else if (
-                (json_parse_flags_allow_inf_and_nan & flags_bitset)
+                (JSON_PARSE_FLAGS_ALLOW_INF_AND_NAN & flags_bitset)
                 && (offset + 3) <= size && 'N' == src[offset + 0]
                 && 'a' == src[offset + 1] && 'N' == src[offset + 2]) {
-                value->type = json_type_number;
+                value->type = JSON_TYPE_NUMBER;
                 value->payload = state->dom;
-                state->dom += sizeof(struct json_number_s);
-                M_HandleNumber(state, (struct json_number_s *)value->payload);
+                state->dom += sizeof(JSON_NUMBER);
+                M_HandleNumber(state, (JSON_NUMBER *)value->payload);
             } else if (
-                (json_parse_flags_allow_inf_and_nan & flags_bitset)
+                (JSON_PARSE_FLAGS_ALLOW_INF_AND_NAN & flags_bitset)
                 && (offset + 8) <= size && 'I' == src[offset + 0]
                 && 'n' == src[offset + 1] && 'f' == src[offset + 2]
                 && 'i' == src[offset + 3] && 'n' == src[offset + 4]
                 && 'i' == src[offset + 5] && 't' == src[offset + 6]
                 && 'y' == src[offset + 7]) {
-                value->type = json_type_number;
+                value->type = JSON_TYPE_NUMBER;
                 value->payload = state->dom;
-                state->dom += sizeof(struct json_number_s);
-                M_HandleNumber(state, (struct json_number_s *)value->payload);
+                state->dom += sizeof(JSON_NUMBER);
+                M_HandleNumber(state, (JSON_NUMBER *)value->payload);
             }
             break;
         }
     }
 }
 
-struct json_value_s *json_parse(const void *src, size_t src_size)
+JSON_VALUE *JSON_Parse(const void *src, size_t src_size)
 {
-    return json_parse_ex(
-        src, src_size, json_parse_flags_default, json_null, json_null,
-        json_null);
+    return JSON_ParseEx(
+        src, src_size, JSON_PARSE_FLAGS_DEFAULT, NULL, NULL, NULL);
 }
 
-struct json_value_s *json_parse_ex(
+JSON_VALUE *JSON_ParseEx(
     const void *src, size_t src_size, size_t flags_bitset,
     void *(*alloc_func_ptr)(void *user_data, size_t size), void *user_data,
-    struct json_parse_result_s *result)
+    JSON_PARSE_RESULT *result)
 {
-    struct json_parse_state_s state;
+    M_STATE state;
     void *allocation;
-    struct json_value_s *value;
+    JSON_VALUE *value;
     size_t total_size;
     int input_error;
 
     if (result) {
-        result->error = json_parse_error_none;
+        result->error = JSON_PARSE_ERROR_NONE;
         result->error_offset = 0;
         result->error_line_no = 0;
         result->error_row_no = 0;
     }
 
-    if (json_null == src) {
+    if (NULL == src) {
         /* invalid src pointer was null! */
-        return json_null;
+        return NULL;
     }
 
     state.src = (const char *)src;
@@ -1671,14 +1650,14 @@ struct json_value_s *json_parse_ex(
     state.offset = 0;
     state.line_no = 1;
     state.line_offset = 0;
-    state.error = json_parse_error_none;
+    state.error = JSON_PARSE_ERROR_NONE;
     state.dom_size = 0;
     state.data_size = 0;
     state.flags_bitset = flags_bitset;
 
     input_error = M_GetValueSize(
         &state,
-        (int)(json_parse_flags_allow_global_object & state.flags_bitset));
+        (int)(JSON_PARSE_FLAGS_ALLOW_GLOBAL_OBJECT & state.flags_bitset));
 
     if (input_error == 0) {
         M_SkipAllSkippables(&state);
@@ -1687,7 +1666,7 @@ struct json_value_s *json_parse_ex(
             /* our parsing didn't have an error, but there are characters
              * remaining in the input that weren't part of the JSON! */
 
-            state.error = json_parse_error_unexpected_trailing_characters;
+            state.error = JSON_PARSE_ERROR_UNEXPECTED_TRAILING_CHARACTERS;
             input_error = 1;
         }
     }
@@ -1700,7 +1679,7 @@ struct json_value_s *json_parse_ex(
             result->error_line_no = state.line_no;
             result->error_row_no = state.offset - state.line_offset;
         }
-        return json_null;
+        return NULL;
     }
 
     /* our total allocation is the combination of the dom and data sizes (we. */
@@ -1709,22 +1688,22 @@ struct json_value_s *json_parse_ex(
     /* the JSON values). */
     total_size = state.dom_size + state.data_size;
 
-    if (json_null == alloc_func_ptr) {
+    if (NULL == alloc_func_ptr) {
         allocation = Memory_Alloc(total_size);
     } else {
         allocation = alloc_func_ptr(user_data, total_size);
     }
 
-    if (json_null == allocation) {
+    if (NULL == allocation) {
         /* malloc failed! */
         if (result) {
-            result->error = json_parse_error_allocator_failed;
+            result->error = JSON_PARSE_ERROR_ALLOCATOR_FAILED;
             result->error_offset = 0;
             result->error_line_no = 0;
             result->error_row_no = 0;
         }
 
-        return json_null;
+        return NULL;
     }
 
     /* reset offset so we can reuse it. */
@@ -1737,9 +1716,9 @@ struct json_value_s *json_parse_ex(
     state.dom = (char *)allocation;
     state.data = state.dom + state.dom_size;
 
-    if (json_parse_flags_allow_location_information & state.flags_bitset) {
-        struct json_value_ex_s *value_ex = (struct json_value_ex_s *)state.dom;
-        state.dom += sizeof(struct json_value_ex_s);
+    if (JSON_PARSE_FLAGS_ALLOW_LOCATION_INFORMATION & state.flags_bitset) {
+        JSON_VALUE_EX *value_ex = (JSON_VALUE_EX *)state.dom;
+        state.dom += sizeof(JSON_VALUE_EX);
 
         value_ex->offset = state.offset;
         value_ex->line_no = state.line_no;
@@ -1747,57 +1726,57 @@ struct json_value_s *json_parse_ex(
 
         value = &(value_ex->value);
     } else {
-        value = (struct json_value_s *)state.dom;
-        state.dom += sizeof(struct json_value_s);
+        value = (JSON_VALUE *)state.dom;
+        state.dom += sizeof(JSON_VALUE);
     }
 
     M_HandleValue(
         &state,
-        (int)(json_parse_flags_allow_global_object & state.flags_bitset),
+        (int)(JSON_PARSE_FLAGS_ALLOW_GLOBAL_OBJECT & state.flags_bitset),
         value);
 
-    ((struct json_value_s *)allocation)->ref_count = 0;
+    ((JSON_VALUE *)allocation)->ref_count = 0;
 
-    return (struct json_value_s *)allocation;
+    return (JSON_VALUE *)allocation;
 }
 
-const char *json_get_error_description(json_parse_error_e error)
+const char *JSON_GetErrorDescription(JSON_PARSE_ERROR error)
 {
     switch (error) {
-    case json_parse_error_none:
+    case JSON_PARSE_ERROR_NONE:
         return "no error";
 
-    case json_parse_error_expected_comma_or_closing_bracket:
+    case JSON_PARSE_ERROR_EXPECTED_COMMA_OR_CLOSING_BRACKET:
         return "expected comma or closing bracket";
 
-    case json_parse_error_expected_colon:
+    case JSON_PARSE_ERROR_EXPECTED_COLON:
         return "expected colon";
 
-    case json_parse_error_expected_opening_quote:
+    case JSON_PARSE_ERROR_EXPECTED_OPENING_QUOTE:
         return "expected opening quote";
 
-    case json_parse_error_invalid_string_escape_sequence:
+    case JSON_PARSE_ERROR_INVALID_STRING_ESCAPE_SEQUENCE:
         return "invalid string escape sequence";
 
-    case json_parse_error_invalid_number_format:
+    case JSON_PARSE_ERROR_INVALID_NUMBER_FORMAT:
         return "invalid number format";
 
-    case json_parse_error_invalid_value:
+    case JSON_PARSE_ERROR_INVALID_VALUE:
         return "invalid value";
 
-    case json_parse_error_premature_end_of_buffer:
+    case JSON_PARSE_ERROR_PREMATURE_END_OF_BUFFER:
         return "premature end of buffer";
 
-    case json_parse_error_invalid_string:
+    case JSON_PARSE_ERROR_INVALID_STRING:
         return "allocator failed";
 
-    case json_parse_error_allocator_failed:
+    case JSON_PARSE_ERROR_ALLOCATOR_FAILED:
         return "allocator failed";
 
-    case json_parse_error_unexpected_trailing_characters:
+    case JSON_PARSE_ERROR_UNEXPECTED_TRAILING_CHARACTERS:
         return "unexpected trailing characters";
 
-    case json_parse_error_unknown:
+    case JSON_PARSE_ERROR_UNKNOWN:
     default:
         return "unknown";
     }
