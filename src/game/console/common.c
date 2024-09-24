@@ -2,6 +2,7 @@
 
 #include "./extern.h"
 #include "game/game_string.h"
+#include "game/ui/widgets/console.h"
 #include "log.h"
 #include "memory.h"
 #include "strings.h"
@@ -10,6 +11,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+
+static bool m_IsOpened = false;
+static UI_WIDGET *m_Console;
 
 static void M_LogMultiline(const char *text);
 static void M_Log(const char *text);
@@ -40,7 +44,57 @@ static void M_LogMultiline(const char *const text)
 static void M_Log(const char *text)
 {
     assert(text != NULL);
-    Console_LogImpl(text);
+    UI_Console_HandleLog(m_Console, text);
+}
+
+void Console_Init(void)
+{
+    m_Console = UI_Console_Create();
+}
+
+void Console_Shutdown(void)
+{
+    if (m_Console != NULL) {
+        m_Console->free(m_Console);
+        m_Console = NULL;
+    }
+
+    m_IsOpened = false;
+}
+
+void Console_Open(void)
+{
+    if (m_IsOpened) {
+        UI_Console_HandleClose(m_Console);
+    }
+    m_IsOpened = true;
+    UI_Console_HandleOpen(m_Console);
+}
+
+void Console_Close(void)
+{
+    UI_Console_HandleClose(m_Console);
+    m_IsOpened = false;
+}
+
+bool Console_IsOpened(void)
+{
+    return m_IsOpened;
+}
+
+void Console_ScrollLogs(void)
+{
+    UI_Console_ScrollLogs(m_Console);
+}
+
+int32_t Console_GetVisibleLogCount(void)
+{
+    return UI_Console_GetVisibleLogCount(m_Console);
+}
+
+int32_t Console_GetMaxLogCount(void)
+{
+    return UI_Console_GetMaxLogCount(m_Console);
 }
 
 void Console_Log(const char *fmt, ...)
@@ -117,4 +171,19 @@ COMMAND_RESULT Console_Eval(const char *const cmdline)
         break;
     }
     return result;
+}
+
+void Console_Draw(void)
+{
+    if (m_Console == NULL) {
+        return;
+    }
+
+    Console_ScrollLogs();
+
+    if (Console_IsOpened() || Console_GetVisibleLogCount() > 0) {
+        Console_DrawBackdrop();
+    }
+
+    m_Console->draw(m_Console);
 }
