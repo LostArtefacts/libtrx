@@ -47,8 +47,8 @@ typedef struct __PACKING {
     void *priv;
     CARRIED_ITEM *carried_item;
 #elif TR_VERSION == 2
-    int16_t shade1;
-    int16_t shade2;
+    int16_t shade_1;
+    int16_t shade_2;
     int16_t carried_item;
     void *data;
 #endif

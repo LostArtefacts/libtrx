@@ -63,20 +63,12 @@ static COMMAND_RESULT M_TeleportToRoom(const int16_t room_num)
     }
 
     const ROOM *const room = Room_Get(room_num);
-#if TR_VERSION == 1
-    const int32_t rx = room->x;
-    const int32_t rz = room->z;
-#elif TR_VERSION == 2
-    const int32_t rx = room->pos.x;
-    const int32_t rz = room->pos.z;
-#endif
-
-    const int32_t x1 = rx + WALL_L;
-    const int32_t x2 = rx + (room->x_size << WALL_SHIFT) - WALL_L;
+    const int32_t x1 = room->pos.x + WALL_L;
+    const int32_t x2 = room->pos.x + (room->size.x << WALL_SHIFT) - WALL_L;
     const int32_t y1 = room->min_floor;
     const int32_t y2 = room->max_ceiling;
-    const int32_t z1 = rz + WALL_L;
-    const int32_t z2 = rz + (room->z_size << WALL_SHIFT) - WALL_L;
+    const int32_t z1 = room->pos.z + WALL_L;
+    const int32_t z2 = room->pos.z + (room->size.z << WALL_SHIFT) - WALL_L;
 
     bool success = false;
     for (int32_t i = 0; i < 100; i++) {
