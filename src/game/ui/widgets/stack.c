@@ -128,6 +128,15 @@ UI_WIDGET *UI_Stack_Create(
     return (UI_WIDGET *)self;
 }
 
+void UI_Stack_SetSize(
+    UI_WIDGET *const widget, const int32_t width, const int32_t height)
+{
+    UI_STACK *const self = (UI_STACK *)widget;
+    self->width = width;
+    self->height = height;
+    UI_Stack_DoLayout(widget);
+}
+
 void UI_Stack_DoLayout(UI_WIDGET *const widget)
 {
     UI_STACK *const self = (UI_STACK *)widget;

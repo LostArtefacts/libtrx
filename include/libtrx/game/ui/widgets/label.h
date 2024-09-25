@@ -9,6 +9,7 @@ extern UI_WIDGET *UI_Label_Create(
 
 extern void UI_Label_ChangeText(UI_WIDGET *widget, const char *text);
 extern const char *UI_Label_GetText(UI_WIDGET *widget);
+extern void UI_Label_SetSize(UI_WIDGET *widget, int32_t width, int32_t height);
 
 extern void UI_Label_AddFrame(UI_WIDGET *widget);
 extern void UI_Label_RemoveFrame(UI_WIDGET *widget);

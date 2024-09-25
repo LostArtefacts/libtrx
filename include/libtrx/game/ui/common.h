@@ -19,4 +19,6 @@ void UI_HandleKeyDown(uint32_t key);
 void UI_HandleKeyUp(uint32_t key);
 void UI_HandleTextEdit(const char *text);
 
+extern int32_t UI_GetCanvasWidth(void);
+extern int32_t UI_GetCanvasHeight(void);
 extern UI_INPUT UI_TranslateInput(uint32_t system_keycode);

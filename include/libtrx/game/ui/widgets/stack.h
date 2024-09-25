@@ -14,5 +14,5 @@ typedef enum {
 UI_WIDGET *UI_Stack_Create(
     UI_STACK_LAYOUT layout, int32_t width, int32_t height);
 void UI_Stack_AddChild(UI_WIDGET *self, UI_WIDGET *child);
+void UI_Stack_SetSize(UI_WIDGET *widget, int32_t width, int32_t height);
 void UI_Stack_DoLayout(UI_WIDGET *self);
-void UI_Stack_SetInverse(UI_WIDGET *self, bool inverse);

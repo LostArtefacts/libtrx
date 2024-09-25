@@ -2,6 +2,7 @@
 
 #include "game/clock.h"
 #include "game/console/common.h"
+#include "game/ui/common.h"
 #include "game/ui/events.h"
 #include "game/ui/widgets/label.h"
 #include "game/ui/widgets/prompt.h"
@@ -27,6 +28,7 @@ typedef struct {
 
     int32_t listener1;
     int32_t listener2;
+    int32_t listener3;
 
     struct {
         double expire_at;
@@ -36,6 +38,7 @@ typedef struct {
 
 static void M_HandlePromptCancel(const UI_EVENT *event, void *data);
 static void M_HandlePromptConfirm(const UI_EVENT *event, void *data);
+static void M_HandleConfigChange(const UI_EVENT *event, void *data);
 static void M_UpdateLogCount(UI_CONSOLE *self);
 
 static int32_t M_GetWidth(const UI_CONSOLE *self);
@@ -57,6 +60,17 @@ static void M_HandlePromptConfirm(const UI_EVENT *const event, void *const data)
     Console_Close();
 }
 
+static void M_HandleConfigChange(const UI_EVENT *event, void *data)
+{
+    UI_CONSOLE *const self = (UI_CONSOLE *)data;
+    UI_Prompt_SetSize(self->prompt, M_GetWidth(self), TEXT_HEIGHT + LOG_MARGIN);
+    for (int32_t i = 0; i < MAX_LOG_LINES; i++) {
+        UI_Label_SetSize(
+            self->logs[i].label, M_GetWidth(self), UI_LABEL_AUTO_SIZE);
+    }
+    UI_Stack_SetSize(self->container, M_GetWidth(self), M_GetHeight(self));
+}
+
 static void M_UpdateLogCount(UI_CONSOLE *const self)
 {
     self->logs_on_screen = 0;
@@ -70,12 +84,12 @@ static void M_UpdateLogCount(UI_CONSOLE *const self)
 
 static int32_t M_GetWidth(const UI_CONSOLE *const self)
 {
-    return 640 - 2 * WINDOW_MARGIN;
+    return UI_GetCanvasWidth() - 2 * WINDOW_MARGIN;
 }
 
 static int32_t M_GetHeight(const UI_CONSOLE *const self)
 {
-    return 480 - 2 * WINDOW_MARGIN;
+    return UI_GetCanvasHeight() - 2 * WINDOW_MARGIN;
 }
 
 static void M_SetPosition(UI_CONSOLE *const self, int32_t x, int32_t y)
@@ -103,6 +117,7 @@ static void M_Free(UI_CONSOLE *const self)
     self->container->free(self->container);
     UI_Events_Unsubscribe(self->listener1);
     UI_Events_Unsubscribe(self->listener2);
+    UI_Events_Unsubscribe(self->listener3);
     Memory_Free(self);
 }
 
@@ -137,6 +152,8 @@ UI_WIDGET *UI_Console_Create(void)
         "confirm", self->prompt, M_HandlePromptConfirm, NULL);
     self->listener2 =
         UI_Events_Subscribe("cancel", self->prompt, M_HandlePromptCancel, NULL);
+    self->listener3 =
+        UI_Events_Subscribe("config_change", NULL, M_HandleConfigChange, self);
 
     return (UI_WIDGET *)self;
 }

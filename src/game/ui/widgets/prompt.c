@@ -279,6 +279,12 @@ UI_WIDGET *UI_Prompt_Create(const int32_t width, const int32_t height)
     return (UI_WIDGET *)self;
 }
 
+void UI_Prompt_SetSize(UI_WIDGET *widget, int32_t width, int32_t height)
+{
+    UI_PROMPT *const self = (UI_PROMPT *)widget;
+    UI_Label_SetSize(self->label, width, height);
+}
+
 void UI_Prompt_SetFocus(UI_WIDGET *const widget, const bool is_focused)
 {
     UI_PROMPT *const self = (UI_PROMPT *)widget;
