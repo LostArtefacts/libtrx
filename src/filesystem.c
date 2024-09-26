@@ -394,9 +394,12 @@ void File_Close(MYFILE *file)
 
 bool File_Load(const char *path, char **output_data, size_t *output_size)
 {
+    assert(output_data != NULL);
+
     MYFILE *fp = File_Open(path, FILE_OPEN_READ);
     if (!fp) {
         LOG_ERROR("Can't open file %s", path);
+        *output_data = NULL;
         return false;
     }
 
@@ -404,6 +407,7 @@ bool File_Load(const char *path, char **output_data, size_t *output_size)
     char *data = Memory_Alloc(data_size + 1);
     File_ReadData(fp, data, data_size);
     if (File_Pos(fp) != data_size) {
+        *output_data = NULL;
         LOG_ERROR("Can't read file %s", path);
         Memory_FreePointer(&data);
         File_Close(fp);
@@ -413,7 +417,7 @@ bool File_Load(const char *path, char **output_data, size_t *output_size)
     data[data_size] = '\0';
 
     *output_data = data;
-    if (output_size) {
+    if (output_size != NULL) {
         *output_size = data_size;
     }
     return true;

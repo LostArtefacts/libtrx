@@ -83,17 +83,24 @@ bool ConfigFile_Write(const char *path, void (*dump)(JSON_OBJECT *root_obj))
 {
     LOG_INFO("Saving user settings");
 
-    MYFILE *fp = File_Open(path, FILE_OPEN_WRITE);
-    if (!fp) {
-        return false;
+    char *old_data;
+    File_Load(path, &old_data, NULL);
+
+    bool updated = false;
+    char *data = M_WriteToJSON(dump);
+    if (old_data == NULL || strcmp(data, old_data) != 0) {
+        MYFILE *const fp = File_Open(path, FILE_OPEN_WRITE);
+        if (fp == NULL) {
+            LOG_ERROR("Failed to write settings!");
+        } else {
+            File_WriteData(fp, data, strlen(data));
+            File_Close(fp);
+            updated = true;
+        }
     }
 
-    char *data = M_WriteToJSON(dump);
-    File_WriteData(fp, data, strlen(data));
-    File_Close(fp);
     Memory_FreePointer(&data);
-
-    return true;
+    return updated;
 }
 
 void ConfigFile_LoadOptions(JSON_OBJECT *root_obj, const CONFIG_OPTION *options)

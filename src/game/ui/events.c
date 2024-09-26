@@ -1,12 +1,27 @@
 #include "game/ui/events.h"
 
+#include "config/common.h"
+
 #include <stddef.h>
 
 static EVENT_MANAGER *m_EventManager = NULL;
 
+static void M_HandleConfigChange(const EVENT *event, void *data);
+
+static void M_HandleConfigChange(const EVENT *const event, void *const data)
+{
+    const EVENT new_event = {
+        .name = "canvas_resize",
+        .sender = NULL,
+        .data = NULL,
+    };
+    EventManager_Fire(m_EventManager, &new_event);
+}
+
 void UI_Events_Init(void)
 {
     m_EventManager = EventManager_Create();
+    Config_SubscribeChanges(M_HandleConfigChange, NULL);
 }
 
 void UI_Events_Shutdown(void)

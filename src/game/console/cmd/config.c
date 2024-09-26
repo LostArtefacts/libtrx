@@ -234,9 +234,7 @@ COMMAND_RESULT Console_Cmd_Config_Helper(
     }
 
     if (M_SetCurrentValue(option, new_value)) {
-        Config_Sanitize();
         Config_Write();
-        Config_ApplyChanges();
 
         char final_value[128];
         assert(M_GetCurrentValue(option, final_value, 128));

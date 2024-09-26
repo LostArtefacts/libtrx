@@ -1,7 +1,21 @@
 #include "config/common.h"
 
 #include "config/file.h"
-#include "game/ui/events.h"
+
+#include <assert.h>
+
+EVENT_MANAGER *m_EventManager = NULL;
+
+void Config_Init(void)
+{
+    m_EventManager = EventManager_Create();
+}
+
+void Config_Shutdown(void)
+{
+    EventManager_Free(m_EventManager);
+    m_EventManager = NULL;
+}
 
 bool Config_Read(void)
 {
@@ -15,12 +29,32 @@ bool Config_Read(void)
 
 bool Config_Write(void)
 {
-    const EVENT event = {
-        .name = "canvas_resize",
-        .sender = NULL,
-        .data = NULL,
-    };
-    UI_Events_Fire(&event);
+    Config_Sanitize();
+    const bool updated = ConfigFile_Write(Config_GetPath(), &Config_DumpToJSON);
+    if (updated) {
+        Config_ApplyChanges();
+        if (m_EventManager != NULL) {
+            const EVENT event = {
+                .name = "write",
+                .sender = NULL,
+                .data = NULL,
+            };
+            EventManager_Fire(m_EventManager, &event);
+        }
+    }
+    return updated;
+}
 
-    return ConfigFile_Write(Config_GetPath(), &Config_DumpToJSON);
+int32_t Config_SubscribeChanges(
+    const EVENT_LISTENER listener, void *const user_data)
+{
+    assert(m_EventManager != NULL);
+    return EventManager_Subscribe(
+        m_EventManager, "write", NULL, listener, user_data);
+}
+
+void Config_UnsubscribeChanges(const int32_t listener_id)
+{
+    assert(m_EventManager != NULL);
+    return EventManager_Unsubscribe(m_EventManager, listener_id);
 }
