@@ -256,7 +256,7 @@ UI_WIDGET *UI_Prompt_Create(const int32_t width, const int32_t height)
     UI_PROMPT *const self = Memory_Alloc(sizeof(UI_PROMPT));
     self->vtable = (UI_WIDGET_VTABLE) {
         .control = (UI_WIDGET_CONTROL)M_Control,
-        .draw = (UI_WIDGET_CONTROL)M_Draw,
+        .draw = (UI_WIDGET_DRAW)M_Draw,
         .get_width = (UI_WIDGET_GET_WIDTH)M_GetWidth,
         .get_height = (UI_WIDGET_GET_HEIGHT)M_GetHeight,
         .set_position = (UI_WIDGET_SET_POSITION)M_SetPosition,
@@ -279,7 +279,8 @@ UI_WIDGET *UI_Prompt_Create(const int32_t width, const int32_t height)
     return (UI_WIDGET *)self;
 }
 
-void UI_Prompt_SetSize(UI_WIDGET *widget, int32_t width, int32_t height)
+void UI_Prompt_SetSize(
+    UI_WIDGET *const widget, const int32_t width, const int32_t height)
 {
     UI_PROMPT *const self = (UI_PROMPT *)widget;
     UI_Label_SetSize(self->label, width, height);

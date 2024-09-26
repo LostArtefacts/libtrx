@@ -6,6 +6,7 @@
 #include "game/ui/events.h"
 #include "game/ui/widgets/label.h"
 #include "game/ui/widgets/prompt.h"
+#include "game/ui/widgets/spacer.h"
 #include "game/ui/widgets/stack.h"
 #include "memory.h"
 #include "utils.h"
@@ -13,8 +14,8 @@
 #include <string.h>
 
 #define WINDOW_MARGIN 5
-#define LOG_MARGIN 3
-#define TEXT_HEIGHT 15
+#define LOG_HEIGHT 16
+#define LOG_MARGIN 10
 #define MAX_LOG_LINES 20
 #define LOG_SCALE 0.8
 #define DELAY_PER_CHAR 0.2
@@ -23,6 +24,7 @@ typedef struct {
     UI_WIDGET_VTABLE vtable;
     UI_WIDGET *container;
     UI_WIDGET *prompt;
+    UI_WIDGET *spacer;
     char *log_lines;
     int32_t logs_on_screen;
 
@@ -108,6 +110,7 @@ static void M_Draw(UI_CONSOLE *const self)
 
 static void M_Free(UI_CONSOLE *const self)
 {
+    self->spacer->free(self->spacer);
     self->prompt->free(self->prompt);
     self->container->free(self->container);
     UI_Events_Unsubscribe(self->listener1);
@@ -121,7 +124,7 @@ UI_WIDGET *UI_Console_Create(void)
     UI_CONSOLE *const self = Memory_Alloc(sizeof(UI_CONSOLE));
     self->vtable = (UI_WIDGET_VTABLE) {
         .control = (UI_WIDGET_CONTROL)M_Control,
-        .draw = (UI_WIDGET_CONTROL)M_Draw,
+        .draw = (UI_WIDGET_DRAW)M_Draw,
         .get_width = (UI_WIDGET_GET_WIDTH)M_GetWidth,
         .get_height = (UI_WIDGET_GET_HEIGHT)M_GetHeight,
         .set_position = (UI_WIDGET_SET_POSITION)M_SetPosition,
@@ -134,13 +137,15 @@ UI_WIDGET *UI_Console_Create(void)
 
     for (int32_t i = MAX_LOG_LINES - 1; i >= 0; i--) {
         self->logs[i].label =
-            UI_Label_Create("", UI_LABEL_AUTO_SIZE, UI_LABEL_AUTO_SIZE);
+            UI_Label_Create("", UI_LABEL_AUTO_SIZE, LOG_HEIGHT * LOG_SCALE);
         UI_Label_SetScale(self->logs[i].label, LOG_SCALE);
         UI_Stack_AddChild(self->container, self->logs[i].label);
     }
 
-    self->prompt =
-        UI_Prompt_Create(UI_LABEL_AUTO_SIZE, TEXT_HEIGHT + LOG_MARGIN);
+    self->spacer = UI_Spacer_Create(LOG_MARGIN, LOG_MARGIN);
+    UI_Stack_AddChild(self->container, self->spacer);
+
+    self->prompt = UI_Prompt_Create(UI_LABEL_AUTO_SIZE, UI_LABEL_AUTO_SIZE);
     UI_Stack_AddChild(self->container, self->prompt);
 
     M_SetPosition(self, WINDOW_MARGIN, WINDOW_MARGIN);

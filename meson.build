@@ -89,6 +89,7 @@ sources = [
   'src/game/ui/events.c',
   'src/game/ui/widgets/console.c',
   'src/game/ui/widgets/prompt.c',
+  'src/game/ui/widgets/spacer.c',
   'src/game/ui/widgets/stack.c',
   'src/gfx/2d/2d_renderer.c',
   'src/gfx/2d/2d_surface.c',
