@@ -65,6 +65,7 @@ sources = [
   'src/engine/audio_stream.c',
   'src/engine/image.c',
   'src/enum_str.c',
+  'src/event_manager.c',
   'src/filesystem.c',
   'src/game/backpack.c',
   'src/game/console/cmd/config.c',

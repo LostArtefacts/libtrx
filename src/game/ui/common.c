@@ -14,7 +14,7 @@ void UI_Shutdown(void)
 
 void UI_HandleKeyDown(const uint32_t key)
 {
-    const UI_EVENT event = {
+    const EVENT event = {
         .name = "key_down",
         .sender = NULL,
         .data = (void *)UI_TranslateInput(key),
@@ -24,7 +24,7 @@ void UI_HandleKeyDown(const uint32_t key)
 
 void UI_HandleKeyUp(const uint32_t key)
 {
-    const UI_EVENT event = {
+    const EVENT event = {
         .name = "key_up",
         .sender = NULL,
         .data = (void *)UI_TranslateInput(key),
@@ -34,7 +34,7 @@ void UI_HandleKeyUp(const uint32_t key)
 
 void UI_HandleTextEdit(const char *const text)
 {
-    const UI_EVENT event = {
+    const EVENT event = {
         .name = "text_edit",
         .sender = NULL,
         .data = (void *)text,

@@ -36,9 +36,9 @@ typedef struct {
     } logs[MAX_LOG_LINES];
 } UI_CONSOLE;
 
-static void M_HandlePromptCancel(const UI_EVENT *event, void *data);
-static void M_HandlePromptConfirm(const UI_EVENT *event, void *data);
-static void M_HandleConfigChange(const UI_EVENT *event, void *data);
+static void M_HandlePromptCancel(const EVENT *event, void *data);
+static void M_HandlePromptConfirm(const EVENT *event, void *data);
+static void M_HandleCanvasResize(const EVENT *event, void *data);
 static void M_UpdateLogCount(UI_CONSOLE *self);
 
 static int32_t M_GetWidth(const UI_CONSOLE *self);
@@ -48,19 +48,19 @@ static void M_Control(UI_CONSOLE *self);
 static void M_Draw(UI_CONSOLE *self);
 static void M_Free(UI_CONSOLE *self);
 
-static void M_HandlePromptCancel(const UI_EVENT *const event, void *const data)
+static void M_HandlePromptCancel(const EVENT *const event, void *const data)
 {
     Console_Close();
 }
 
-static void M_HandlePromptConfirm(const UI_EVENT *const event, void *const data)
+static void M_HandlePromptConfirm(const EVENT *const event, void *const data)
 {
     const char *text = event->data;
     Console_Eval(text);
     Console_Close();
 }
 
-static void M_HandleConfigChange(const UI_EVENT *event, void *data)
+static void M_HandleCanvasResize(const EVENT *event, void *data)
 {
     UI_CONSOLE *const self = (UI_CONSOLE *)data;
     UI_Stack_SetSize(self->container, M_GetWidth(self), M_GetHeight(self));
@@ -150,7 +150,7 @@ UI_WIDGET *UI_Console_Create(void)
     self->listener2 =
         UI_Events_Subscribe("cancel", self->prompt, M_HandlePromptCancel, NULL);
     self->listener3 =
-        UI_Events_Subscribe("config_change", NULL, M_HandleConfigChange, self);
+        UI_Events_Subscribe("canvas_resize", NULL, M_HandleCanvasResize, self);
 
     return (UI_WIDGET *)self;
 }

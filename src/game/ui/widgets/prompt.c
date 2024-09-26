@@ -47,8 +47,8 @@ static void M_SetPosition(UI_PROMPT *self, int32_t x, int32_t y);
 static void M_Control(UI_PROMPT *self);
 static void M_Draw(UI_PROMPT *self);
 static void M_Free(UI_PROMPT *self);
-static void M_HandleKeyDown(const UI_EVENT *event, void *user_data);
-static void M_HandleTextEdit(const UI_EVENT *event, void *user_data);
+static void M_HandleKeyDown(const EVENT *event, void *user_data);
+static void M_HandleTextEdit(const EVENT *event, void *user_data);
 
 static void M_UpdatePromptLabel(UI_PROMPT *const self)
 {
@@ -166,9 +166,9 @@ static void M_Confirm(UI_PROMPT *const self)
         M_Cancel(self);
         return;
     }
-    const UI_EVENT event = {
+    const EVENT event = {
         .name = "confirm",
-        .sender = (const UI_WIDGET *)self,
+        .sender = self,
         .data = self->current_text,
     };
     UI_Events_Fire(&event);
@@ -178,9 +178,9 @@ static void M_Confirm(UI_PROMPT *const self)
 
 static void M_Cancel(UI_PROMPT *const self)
 {
-    const UI_EVENT event = {
+    const EVENT event = {
         .name = "cancel",
-        .sender = (const UI_WIDGET *)self,
+        .sender = self,
         .data = self->current_text,
     };
     UI_Events_Fire(&event);
@@ -195,7 +195,7 @@ static void M_Clear(UI_PROMPT *const self)
     M_UpdateCaretLabel(self);
 }
 
-static void M_HandleKeyDown(const UI_EVENT *const event, void *const user_data)
+static void M_HandleKeyDown(const EVENT *const event, void *const user_data)
 {
     const UI_INPUT key = (UI_INPUT)(uintptr_t)event->data;
     UI_PROMPT *const self = user_data;
@@ -217,7 +217,7 @@ static void M_HandleKeyDown(const UI_EVENT *const event, void *const user_data)
     // clang-format on
 }
 
-static void M_HandleTextEdit(const UI_EVENT *const event, void *const user_data)
+static void M_HandleTextEdit(const EVENT *const event, void *const user_data)
 {
     const char *insert_string = event->data;
     const size_t insert_length = strlen(insert_string);
