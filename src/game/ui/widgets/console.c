@@ -63,11 +63,6 @@ static void M_HandlePromptConfirm(const UI_EVENT *const event, void *const data)
 static void M_HandleConfigChange(const UI_EVENT *event, void *data)
 {
     UI_CONSOLE *const self = (UI_CONSOLE *)data;
-    UI_Prompt_SetSize(self->prompt, M_GetWidth(self), TEXT_HEIGHT + LOG_MARGIN);
-    for (int32_t i = 0; i < MAX_LOG_LINES; i++) {
-        UI_Label_SetSize(
-            self->logs[i].label, M_GetWidth(self), UI_LABEL_AUTO_SIZE);
-    }
     UI_Stack_SetSize(self->container, M_GetWidth(self), M_GetHeight(self));
 }
 
@@ -134,17 +129,19 @@ UI_WIDGET *UI_Console_Create(void)
     };
 
     self->container = UI_Stack_Create(
-        UI_STACK_LAYOUT_VERTICAL_INVERSE, M_GetWidth(self), M_GetHeight(self));
+        UI_STACK_LAYOUT_VERTICAL, M_GetWidth(self), M_GetHeight(self));
+    UI_Stack_SetVAlign(self->container, UI_STACK_V_ALIGN_BOTTOM);
 
-    self->prompt = UI_Prompt_Create(M_GetWidth(self), TEXT_HEIGHT + LOG_MARGIN);
-    UI_Stack_AddChild(self->container, self->prompt);
-
-    for (int32_t i = 0; i < MAX_LOG_LINES; i++) {
+    for (int32_t i = MAX_LOG_LINES - 1; i >= 0; i--) {
         self->logs[i].label =
-            UI_Label_Create("", M_GetWidth(self), UI_LABEL_AUTO_SIZE);
+            UI_Label_Create("", UI_LABEL_AUTO_SIZE, UI_LABEL_AUTO_SIZE);
         UI_Label_SetScale(self->logs[i].label, LOG_SCALE);
         UI_Stack_AddChild(self->container, self->logs[i].label);
     }
+
+    self->prompt =
+        UI_Prompt_Create(UI_LABEL_AUTO_SIZE, TEXT_HEIGHT + LOG_MARGIN);
+    UI_Stack_AddChild(self->container, self->prompt);
 
     M_SetPosition(self, WINDOW_MARGIN, WINDOW_MARGIN);
 
