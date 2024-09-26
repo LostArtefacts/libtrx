@@ -59,7 +59,8 @@ endif
 
 sources = [
   'src/benchmark.c',
-  'src/config/config_file.c',
+  'src/config/common.c',
+  'src/config/file.c',
   'src/engine/audio.c',
   'src/engine/audio_sample.c',
   'src/engine/audio_stream.c',

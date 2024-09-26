@@ -1,7 +1,7 @@
 #include "game/console/cmd/config.h"
 
-#include "config/config.h"
-#include "config/config_map.h"
+#include "config/common.h"
+#include "config/map.h"
 #include "game/game_string.h"
 #include "memory.h"
 #include "strings.h"

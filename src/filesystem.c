@@ -3,6 +3,7 @@
 #include "log.h"
 #include "memory.h"
 #include "strings.h"
+#include "utils.h"
 
 #include <SDL2/SDL_filesystem.h>
 #include <assert.h>
@@ -187,6 +188,17 @@ char *File_GetFullPath(const char *path)
         return case_path;
     }
 
+    return full_path;
+}
+
+char *File_GetParentDirectory(const char *path)
+{
+    char *full_path = File_GetFullPath(path);
+    char *const last_delim =
+        MAX(strrchr(full_path, '/'), strrchr(full_path, '\\'));
+    if (last_delim != NULL) {
+        *last_delim = '\0';
+    }
     return full_path;
 }
 

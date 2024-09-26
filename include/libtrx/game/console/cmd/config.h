@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../config/config_option.h"
+#include "../../../config/option.h"
 #include "../common.h"
 
 extern CONSOLE_COMMAND g_Console_Cmd_Config;

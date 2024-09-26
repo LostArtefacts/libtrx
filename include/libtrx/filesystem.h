@@ -34,6 +34,8 @@ const char *File_GetGameDirectory(void);
 // only be necessary when interacting with external libraries.
 char *File_GetFullPath(const char *path);
 
+char *File_GetParentDirectory(const char *path);
+
 char *File_GuessExtension(const char *path, const char **extensions);
 
 MYFILE *File_Open(const char *path, FILE_OPEN_MODE mode);

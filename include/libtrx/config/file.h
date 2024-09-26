@@ -2,7 +2,7 @@
 
 #include "../enum_str.h"
 #include "../json.h"
-#include "config_option.h"
+#include "./option.h"
 
 #include <stdbool.h>
 #include <stdint.h>
