@@ -114,7 +114,8 @@ sources = [
   'src/json/json_write.c',
   'src/log.c',
   'src/memory.c',
-  'src/strings.c',
+  'src/strings/common.c',
+  'src/strings/fuzzy_match.c',
   'src/vector.c',
   'src/virtual_file.c',
 ]

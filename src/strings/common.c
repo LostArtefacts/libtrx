@@ -1,7 +1,6 @@
-#include "strings.h"
-
 #include "log.h"
 #include "memory.h"
+#include "strings.h"
 #include "utils.h"
 
 #include <ctype.h>
