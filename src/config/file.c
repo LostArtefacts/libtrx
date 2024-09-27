@@ -135,8 +135,7 @@ void ConfigFile_LoadOptions(JSON_OBJECT *root_obj, const CONFIG_OPTION *options)
         case COT_ENUM:
             *(int *)opt->target = ConfigFile_ReadEnum(
                 root_obj, M_ResolveOptionName(opt->name),
-                *(int *)opt->default_value,
-                (const ENUM_STRING_MAP *)opt->param);
+                *(int *)opt->default_value, opt->param);
         }
         opt++;
     }
@@ -173,7 +172,7 @@ void ConfigFile_DumpOptions(JSON_OBJECT *root_obj, const CONFIG_OPTION *options)
         case COT_ENUM:
             ConfigFile_WriteEnum(
                 root_obj, M_ResolveOptionName(opt->name), *(int *)opt->target,
-                (const ENUM_STRING_MAP *)opt->param);
+                (const char *)opt->param);
             break;
         }
         opt++;
@@ -181,30 +180,18 @@ void ConfigFile_DumpOptions(JSON_OBJECT *root_obj, const CONFIG_OPTION *options)
 }
 
 int ConfigFile_ReadEnum(
-    JSON_OBJECT *obj, const char *name, int default_value,
-    const ENUM_STRING_MAP *enum_map)
+    JSON_OBJECT *const obj, const char *const name, const int default_value,
+    const char *const enum_name)
 {
     const char *value_str = JSON_ObjectGetString(obj, name, NULL);
-    if (value_str) {
-        while (enum_map->text) {
-            if (!strcmp(value_str, enum_map->text)) {
-                return enum_map->value;
-            }
-            enum_map++;
-        }
+    if (value_str != NULL) {
+        return EnumMap_Get(enum_name, value_str, default_value);
     }
     return default_value;
 }
 
 void ConfigFile_WriteEnum(
-    JSON_OBJECT *obj, const char *name, int value,
-    const ENUM_STRING_MAP *enum_map)
+    JSON_OBJECT *obj, const char *name, int value, const char *enum_name)
 {
-    while (enum_map->text) {
-        if (enum_map->value == value) {
-            JSON_ObjectAppendString(obj, name, enum_map->text);
-            break;
-        }
-        enum_map++;
-    }
+    JSON_ObjectAppendString(obj, name, EnumMap_ToString(enum_name, value));
 }

@@ -92,12 +92,9 @@ static bool M_GetCurrentValue(
         snprintf(target, target_size, "%.2f", *(double *)option->target);
         break;
     case COT_ENUM:
-        for (const ENUM_STRING_MAP *enum_map = option->param;
-             enum_map->text != NULL; enum_map++) {
-            if (enum_map->value == *(int32_t *)option->target) {
-                strncpy(target, enum_map->text, target_size);
-            }
-        }
+        snprintf(
+            target, target_size, "%s",
+            EnumMap_ToString(option->param, *(int32_t *)option->target));
         break;
     }
     return true;
@@ -149,15 +146,15 @@ static bool M_SetCurrentValue(
         break;
     }
 
-    case COT_ENUM:
-        for (const ENUM_STRING_MAP *enum_map = option->param;
-             enum_map->text != NULL; enum_map++) {
-            if (String_Equivalent(enum_map->text, new_value)) {
-                *(int32_t *)option->target = enum_map->value;
-                return true;
-            }
+    case COT_ENUM: {
+        const int32_t new_value_typed =
+            EnumMap_Get(option->param, new_value, -1);
+        if (new_value_typed != -1) {
+            *(int32_t *)option->target = new_value_typed;
+            return true;
         }
         break;
+    }
     }
 
     return false;

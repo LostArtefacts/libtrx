@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../enum_str.h"
+#include "../enum_map.h"
 #include "../json.h"
 #include "./option.h"
 
@@ -17,7 +17,6 @@ void ConfigFile_DumpOptions(
 
 int ConfigFile_ReadEnum(
     JSON_OBJECT *obj, const char *name, int default_value,
-    const ENUM_STRING_MAP *enum_map);
+    const char *enum_name);
 void ConfigFile_WriteEnum(
-    JSON_OBJECT *obj, const char *name, int value,
-    const ENUM_STRING_MAP *enum_map);
+    JSON_OBJECT *obj, const char *name, int value, const char *enum_name);

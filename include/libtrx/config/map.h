@@ -1,4 +1,4 @@
-#include "../enum_str.h"
+#include "../enum_map.h"
 #include "../utils.h"
 #include "./option.h"
 
@@ -39,4 +39,4 @@
       .type = COT_ENUM,                                                        \
       .target = &parent.target_,                                               \
       .default_value = &(int32_t) { default_value_ },                          \
-      .param = ENUM_STRING_MAP(enum_map) },
+      .param = ENUM_MAP_NAME(enum_map) },
