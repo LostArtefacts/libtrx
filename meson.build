@@ -86,6 +86,7 @@ sources = [
   'src/game/console/common.c',
   'src/game/game_string.c',
   'src/game/items.c',
+  'src/game/objects/names.c',
   'src/game/ui/common.c',
   'src/game/ui/events.c',
   'src/game/ui/widgets/console.c',

@@ -40,7 +40,7 @@ static STRING_FUZZY_SCORE M_GetScore(
     } else if (String_Match(reference, word_regex)) {
         // Got a word match
         score += WORD_MATCH_SCORE_BONUS;
-    } else if (!String_CaseSubstring(reference, user_input)) {
+    } else if (String_CaseSubstring(reference, user_input) == NULL) {
         // No match.
         score = 0;
     }

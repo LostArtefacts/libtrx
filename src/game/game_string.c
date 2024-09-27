@@ -8,17 +8,17 @@ typedef struct {
     char *key;
     char *value;
     UT_hash_handle hh;
-} STRING_TABLE_ENTRY;
+} M_STRING_ENTRY;
 
-static STRING_TABLE_ENTRY *m_StringTable = NULL;
+static M_STRING_ENTRY *m_StringTable = NULL;
 
 void GameString_Define(const char *key, const char *value)
 {
-    STRING_TABLE_ENTRY *entry;
+    M_STRING_ENTRY *entry;
 
     HASH_FIND_STR(m_StringTable, key, entry);
     if (entry == NULL) {
-        entry = (STRING_TABLE_ENTRY *)Memory_Alloc(sizeof(STRING_TABLE_ENTRY));
+        entry = (M_STRING_ENTRY *)Memory_Alloc(sizeof(M_STRING_ENTRY));
         entry->key = Memory_DupStr(key);
         entry->value = Memory_DupStr(value);
         HASH_ADD_KEYPTR(
@@ -31,21 +31,21 @@ void GameString_Define(const char *key, const char *value)
 
 bool GameString_IsKnown(const char *key)
 {
-    STRING_TABLE_ENTRY *entry;
+    M_STRING_ENTRY *entry;
     HASH_FIND_STR(m_StringTable, key, entry);
     return entry != NULL;
 }
 
 const char *GameString_Get(const char *key)
 {
-    STRING_TABLE_ENTRY *entry;
+    M_STRING_ENTRY *entry;
     HASH_FIND_STR(m_StringTable, key, entry);
     return entry ? entry->value : NULL;
 }
 
 void GameString_Clear(void)
 {
-    STRING_TABLE_ENTRY *entry, *tmp;
+    M_STRING_ENTRY *entry, *tmp;
 
     HASH_ITER(hh, m_StringTable, entry, tmp)
     {
