@@ -1,5 +1,8 @@
 #pragma once
 
+#include "./gameflow/types.h"
+
 #include <stdbool.h>
 
-bool Game_IsPlayable(void);
+extern bool Game_IsPlayable(void);
+extern GAMEFLOW_LEVEL_TYPE Game_GetCurrentLevelType(void);

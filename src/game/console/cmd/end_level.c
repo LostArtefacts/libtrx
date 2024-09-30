@@ -1,5 +1,6 @@
 #include "game/console/cmd/end_level.h"
 
+#include "game/game.h"
 #include "game/lara/cheat.h"
 #include "strings.h"
 
@@ -9,6 +10,10 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 {
     if (!String_IsEmpty(ctx->args)) {
         return CR_BAD_INVOCATION;
+    }
+
+    if (Game_GetCurrentLevelType() == GFL_TITLE) {
+        return CR_UNAVAILABLE;
     }
 
     Lara_Cheat_EndLevel();
