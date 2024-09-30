@@ -75,6 +75,7 @@ GAME_OBJECT_ID *Object_IdsFromName(
     }
 
     Vector_Free(matches);
+    Vector_Free(source);
     matches = NULL;
 
     return results;
