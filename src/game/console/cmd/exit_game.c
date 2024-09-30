@@ -16,6 +16,6 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 }
 
 CONSOLE_COMMAND g_Console_Cmd_ExitGame = {
-    .prefix = "exit",
+    .prefix = "exit|quit",
     .proc = M_Entrypoint,
 };

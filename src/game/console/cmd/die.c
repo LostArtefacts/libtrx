@@ -36,6 +36,6 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 }
 
 CONSOLE_COMMAND g_Console_Cmd_Die = {
-    .prefix = "abortion|natlastinks",
+    .prefix = "abortion|natla-?s(uc|tin)ks",
     .proc = M_Entrypoint,
 };

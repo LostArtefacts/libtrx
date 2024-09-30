@@ -16,6 +16,6 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
 }
 
 CONSOLE_COMMAND g_Console_Cmd_EndLevel = {
-    .prefix = "endlevel",
+    .prefix = "end-?level|next-?level",
     .proc = M_Entrypoint,
 };
