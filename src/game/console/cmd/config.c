@@ -175,7 +175,6 @@ static COMMAND_RESULT M_Entrypoint(const COMMAND_CONTEXT *const ctx)
     const CONFIG_OPTION *const option =
         Console_Cmd_Config_GetOptionFromKey(key);
     if (option == NULL) {
-        Console_Log(GS(OSD_CONFIG_OPTION_UNKNOWN_OPTION), key);
         result = CR_FAILURE;
     } else {
         result = Console_Cmd_Config_Helper(option, new_value);
@@ -188,14 +187,43 @@ cleanup:
 
 const CONFIG_OPTION *Console_Cmd_Config_GetOptionFromKey(const char *const key)
 {
+    VECTOR *source = Vector_Create(sizeof(STRING_FUZZY_SOURCE));
+
     for (const CONFIG_OPTION *option = Config_GetOptionMap();
          option->name != NULL; option++) {
-        if (M_SameKey(option->name, key)) {
-            return option;
-        }
+        STRING_FUZZY_SOURCE source_item = {
+            .key = (const char *)M_NormalizeKey(option->name),
+            .value = (void *)option,
+            .weight = 1,
+        };
+        Vector_Add(source, &source_item);
     }
 
-    return NULL;
+    VECTOR *matches = String_FuzzyMatch(key, source);
+    const CONFIG_OPTION *result = NULL;
+    if (matches->count == 0) {
+        Console_Log(GS(OSD_CONFIG_OPTION_UNKNOWN_OPTION), key);
+    } else if (matches->count == 1) {
+        const STRING_FUZZY_MATCH *const match = Vector_Get(matches, 0);
+        result = match->value;
+    } else if (matches->count == 2) {
+        const STRING_FUZZY_MATCH *const match1 = Vector_Get(matches, 0);
+        const STRING_FUZZY_MATCH *const match2 = Vector_Get(matches, 1);
+        Console_Log(GS(OSD_AMBIGUOUS_INPUT_2), match1->key, match2->key);
+    } else if (matches->count >= 3) {
+        const STRING_FUZZY_MATCH *const match1 = Vector_Get(matches, 0);
+        const STRING_FUZZY_MATCH *const match2 = Vector_Get(matches, 1);
+        Console_Log(GS(OSD_AMBIGUOUS_INPUT_3), match1->key, match2->key);
+    }
+
+    for (int32_t i = 0; i < source->count; i++) {
+        const STRING_FUZZY_SOURCE *const source_item = Vector_Get(source, i);
+        Memory_Free((char *)source_item->key);
+    }
+
+    Vector_Free(matches);
+    Vector_Free(source);
+    return result;
 }
 
 const CONFIG_OPTION *Console_Cmd_Config_GetOptionFromTarget(
