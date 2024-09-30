@@ -90,19 +90,17 @@ def lint_game_strings(
         if path.suffix != ".c":
             continue
         for i, line in enumerate(path.open("r"), 1):
-            if not (match := re.search(r"GS\(([A-Z_]+)\)", line)):
-                continue
+            for match in re.finditer(r"GS\(([A-Z_]+)\)", line):
+                def_ = match.group(1)
+                if def_ in defs:
+                    continue
 
-            def_ = match.group(1)
-            if def_ in defs:
-                continue
-
-            yield LintWarning(
-                path,
-                f"undefined game string: {def_}. "
-                f"Make sure it's defined in {path_hints}.",
-                i,
-            )
+                yield LintWarning(
+                    path,
+                    f"undefined game string: {def_}. "
+                    f"Make sure it's defined in {path_hints}.",
+                    i,
+                )
 
 
 ALL_LINTERS: list[Callable[[LintContext, Path], Iterable[LintWarning]]] = [
