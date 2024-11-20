@@ -58,6 +58,7 @@ else
 endif
 
 sources = [
+  'src/arg_parser.c',
   'src/benchmark.c',
   'src/config/common.c',
   'src/config/file.c',
